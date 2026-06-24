@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>效果看板 - 运营CRM</title>
+  <style>
+    /* === Design Tokens === */
+    :root {
+      --bg: #f5f6f8;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --divider: #f0f0f0;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --text: #1f2937;
+      --text-2: #6b7280;
+      --text-3: #9ca3af;
+      --success: #10b981;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --info: #3b82f6;
+      --shadow: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-hover: 0 4px 12px rgba(0,0,0,0.1);
+      --radius: 8px;
+      --header-dark: #0f1623;
+      --content-px: 32px;
+      --gap: 20px;
+      --nav-h: 56px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--bg);
+      min-width: 1280px;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    /* === Top Nav (shared) === */
+    .topnav {
+      height: var(--nav-h);
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .topnav-logo {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-right: 40px;
+      white-space: nowrap;
+    }
+    .topnav-links {
+      display: flex;
+      align-items: stretch;
+      height: 100%;
+      gap: 4px;
+      flex: 1;
+    }
+    .topnav-links a {
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      font-size: 14px;
+      color: var(--text-2);
+      border-bottom: 2px solid transparent;
+      transition: color .15s;
+    }
+    .topnav-links a:hover { color: var(--primary); }
+    .topnav-links a.active {
+      color: var(--primary);
+      font-weight: 600;
+      border-bottom-color: var(--primary);
+    }
+    .topnav-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-left: auto;
+    }
+    .team-select {
+      height: 32px;
+      padding: 0 28px 0 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center;
+      appearance: none;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      display: grid; place-items: center;
+      color: #fff; font-size: 13px; font-weight: 600;
+    }
+
+    /* === Dark Header === */
+    .dash-header {
+      background: var(--header-dark);
+      padding: 28px var(--content-px);
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+    .dash-header-left h1 {
+      font-size: 22px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .dash-header-left p {
+      font-size: 13px;
+      color: #9ca3af;
+    }
+    .dash-header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .view-tabs {
+      display: flex;
+      background: rgba(255,255,255,.08);
+      border-radius: 6px;
+      padding: 3px;
+    }
+    .view-tabs button {
+      padding: 6px 14px;
+      border: 0;
+      background: transparent;
+      color: #9ca3af;
+      font-size: 13px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .view-tabs button.active {
+      background: rgba(255,255,255,.15);
+      color: #fff;
+      font-weight: 500;
+    }
+    .time-select {
+      height: 32px;
+      padding: 0 28px 0 10px;
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 6px;
+      background: rgba(255,255,255,.06) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center;
+      appearance: none;
+      color: #e5e7eb;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* === KPI Cards === */
+    .kpi-wrap {
+      padding: 0 var(--content-px);
+      margin-top: -36px;
+      position: relative;
+      z-index: 2;
+    }
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--gap);
+    }
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px 22px;
+      transition: box-shadow .2s;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .kpi-card:hover { box-shadow: var(--shadow-hover); }
+    .kpi-card .kpi-main { flex: 1; }
+    .kpi-label { font-size: 13px; color: var(--text-2); margin-bottom: 8px; }
+    .kpi-value { font-size: 28px; font-weight: 700; color: var(--text); line-height: 1; }
+    .kpi-trend {
+      font-size: 12px;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .kpi-trend.up { color: var(--success); }
+    .kpi-trend .badge-warn {
+      display: inline-block;
+      padding: 1px 6px;
+      background: #fef3c7;
+      color: #92400e;
+      border-radius: 4px;
+      font-size: 11px;
+      margin-left: 6px;
+    }
+    .ring-wrap { flex-shrink: 0; margin-left: 12px; }
+    .ring-label {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-2);
+      margin-top: 2px;
+    }
+
+    /* === Main Layout === */
+    .main-body {
+      padding: var(--gap) var(--content-px) 32px;
+    }
+    .three-col {
+      display: grid;
+      grid-template-columns: 280px 1fr 300px;
+      gap: var(--gap);
+      margin-bottom: var(--gap);
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 20px;
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-title .sub { font-size: 12px; font-weight: 400; color: var(--text-3); }
+
+    /* === Pills === */
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .pill-green { background: #d1fae5; color: #065f46; }
+    .pill-orange { background: #fef3c7; color: #92400e; }
+    .pill-gray { background: #f3f4f6; color: #374151; }
+    .pill-blue { background: #dbeafe; color: #1e40af; }
+    .pill-red { background: #fee2e2; color: #991b1b; }
+    .pill-goal-blue { background: #dbeafe; color: #1d4ed8; }
+    .pill-goal-green { background: #d1fae5; color: #065f46; }
+    .pill-goal-orange { background: #ffedd5; color: #c2410c; }
+
+    /* === Tier bars === */
+    .tier-item { margin-bottom: 14px; }
+    .tier-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+    .tier-head .count { color: var(--text-2); font-size: 12px; }
+    .tier-bar {
+      height: 6px;
+      background: var(--divider);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .tier-fill { height: 100%; border-radius: 3px; }
+    .tier-fill.green { background: var(--success); }
+    .tier-fill.blue { background: var(--info); }
+    .tier-fill.orange { background: var(--warn); }
+    .tier-fill.red { background: var(--danger); }
+    .tier-footer {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--divider);
+      font-size: 12px;
+      color: var(--text-2);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .tier-footer span.up { color: var(--success); font-weight: 500; }
+    .tier-footer span.info { color: var(--info); font-weight: 500; }
+
+    /* === Chart === */
+    .chart-legend {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-2);
+    }
+    .chart-legend span { display: flex; align-items: center; gap: 5px; }
+    .chart-legend .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+    .chart-svg { width: 100%; height: 220px; display: block; }
+    .chart-tooltip {
+      position: fixed;
+      background: var(--text);
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      pointer-events: none;
+      z-index: 200;
+      display: none;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(0,0,0,.2);
+    }
+    .channel-bars { margin-top: 18px; }
+    .channel-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      font-size: 13px;
+    }
+    .channel-item .ch-name { width: 36px; color: var(--text-2); }
+    .channel-item .ch-bar {
+      flex: 1; height: 8px; background: var(--divider); border-radius: 4px; overflow: hidden;
+    }
+    .channel-item .ch-fill { height: 100%; border-radius: 4px; background: var(--primary); }
+    .channel-item .ch-pct { width: 36px; text-align: right; font-weight: 600; font-size: 12px; }
+
+    /* === Strategy list === */
+    .strategy-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--divider);
+      font-size: 13px;
+    }
+    .strategy-item:last-child { border-bottom: 0; }
+    .strategy-item .s-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .strategy-item .s-count {
+      font-size: 12px;
+      color: var(--text-2);
+      white-space: nowrap;
+    }
+    .strategy-footer {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--divider);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      text-align: center;
+      gap: 8px;
+    }
+    .strategy-footer .sf-num { font-size: 20px; font-weight: 700; }
+    .strategy-footer .sf-label { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+    /* === Transfer table === */
+    .transfer-table { width: 100%; border-collapse: collapse; }
+    .transfer-table th {
+      text-align: left;
+      font-size: 12px;
+      color: var(--text-3);
+      font-weight: 500;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--divider);
+    }
+    .transfer-table td {
+      padding: 12px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--divider);
+    }
+    .transfer-table tr:last-child td { border-bottom: 0; }
+    .flow-arrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+    }
+    .flow-arrow .arrow { color: var(--text-3); }
+    .flow-count { font-weight: 600; color: var(--primary); }
+    .flow-reason { color: var(--text-2); font-size: 12px; }
+  </style>
+</head>
+<body>
+
+<!-- 共享顶部导航栏 -->
+<nav class="topnav">
+  <div class="topnav-logo">运营CRM</div>
+  <div class="topnav-links">
+    <a href="dashboard.html" class="active">效果看板</a>
+    <a href="batch.html">名单管理</a>
+    <a href="user-list.html">用户列表</a>
+    <a href="tier.html">分层管理</a>
+    <a href="task.html">任务管理</a>
+  </div>
+  <div class="topnav-right">
+    <select class="team-select" id="teamSelect">
+      <option>VIP运营</option>
+      <option>平台运营</option>
+      <option>市场运营</option>
+    </select>
+    <div class="avatar">王</div>
+  </div>
+</nav>
+
+<!-- 深色 Header -->
+<div class="dash-header">
+  <div class="dash-header-left">
+    <h1>效果看板</h1>
+    <p>数据截至今日 10:00</p>
+  </div>
+  <div class="dash-header-right">
+    <div class="view-tabs" id="viewTabs">
+      <button class="active" data-view="global">全局视角</button>
+      <button data-view="batch">批次视角</button>
+      <button data-view="team">团队视角</button>
+    </div>
+    <select class="time-select" id="timeSelect">
+      <option selected>本月</option>
+      <option>本周</option>
+      <option>近7天</option>
+      <option>近30天</option>
+    </select>
+  </div>
+</div>
+
+<!-- KPI 卡片 -->
+<div class="kpi-wrap">
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-main">
+        <div class="kpi-label">运营中用户</div>
+        <div class="kpi-value" id="kpiUsers">86,420</div>
+        <div class="kpi-trend up">↑ 8% 较上月</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-main">
+        <div class="kpi-label">运行中策略</div>
+        <div class="kpi-value">32</div>
+        <div class="kpi-trend"><span class="badge-warn">待审批 5</span></div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-main">
+        <div class="kpi-label">综合有效率</div>
+        <div class="kpi-value">34.2%</div>
+        <div class="kpi-trend up">↑ 2.1pp 较上月</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-main">
+        <div class="kpi-label">AI建议采纳率</div>
+        <div class="kpi-value">71%</div>
+      </div>
+      <div class="ring-wrap">
+        <svg width="56" height="56" viewBox="0 0 56 56">
+          <circle cx="28" cy="28" r="24" fill="none" stroke="#e5e7eb" stroke-width="5"/>
+          <circle cx="28" cy="28" r="24" fill="none" stroke="#2563eb" stroke-width="5"
+            stroke-dasharray="150.8" stroke-dashoffset="43.7"
+            stroke-linecap="round" transform="rotate(-90 28 28)"/>
+          <text x="28" y="31" text-anchor="middle" font-size="13" font-weight="700" fill="#1f2937">71%</text>
+        </svg>
+        <div class="ring-label">采纳率</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 主体三栏 -->
+<div class="main-body">
+  <div class="three-col">
+    <!-- 左：用户分层概览 -->
+    <div class="card">
+      <div class="card-title">用户分层概览 <span class="sub">共 86,420 人</span></div>
+      <div class="tier-item">
+        <div class="tier-head">
+          <span class="pill pill-green">高价值活跃</span>
+          <span class="count">18,200</span>
+        </div>
+        <div class="tier-bar"><div class="tier-fill green" style="width:62%"></div></div>
+      </div>
+      <div class="tier-item">
+        <div class="tier-head">
+          <span class="pill pill-blue">低活跃风险</span>
+          <span class="count">31,400</span>
+        </div>
+        <div class="tier-bar"><div class="tier-fill blue" style="width:93%"></div></div>
+      </div>
+      <div class="tier-item">
+        <div class="tier-head">
+          <span class="pill pill-orange">沉默用户</span>
+          <span class="count">22,600</span>
+        </div>
+        <div class="tier-bar"><div class="tier-fill orange" style="width:57%"></div></div>
+      </div>
+      <div class="tier-item">
+        <div class="tier-head">
+          <span class="pill pill-red">流失用户</span>
+          <span class="count">14,220</span>
+        </div>
+        <div class="tier-bar"><div class="tier-fill red" style="width:36%"></div></div>
+      </div>
+      <div class="tier-footer">
+        <div>本周流入 <span class="up">+3,120</span></div>
+        <div>层级升迁 <span class="info">1,440</span></div>
+      </div>
+    </div>
+
+    <!-- 中：策略执行效果 -->
+    <div class="card">
+      <div class="card-title">
+        策略执行效果
+        <div class="chart-legend">
+          <span><i class="dot" style="background:#10b981"></i>促活</span>
+          <span><i class="dot" style="background:#3b82f6"></i>促留</span>
+          <span><i class="dot" style="background:#f59e0b"></i>召回</span>
+        </div>
+      </div>
+      <svg class="chart-svg" id="lineChart" viewBox="0 0 600 220" preserveAspectRatio="none"></svg>
+      <div class="channel-bars">
+        <div class="channel-item">
+          <span class="ch-name">短信</span>
+          <div class="ch-bar"><div class="ch-fill" style="width:89%"></div></div>
+          <span class="ch-pct">89%</span>
+        </div>
+        <div class="channel-item">
+          <span class="ch-name">邮件</span>
+          <div class="ch-bar"><div class="ch-fill" style="width:76%"></div></div>
+          <span class="ch-pct">76%</span>
+        </div>
+        <div class="channel-item">
+          <span class="ch-name">Push</span>
+          <div class="ch-bar"><div class="ch-fill" style="width:61%"></div></div>
+          <span class="ch-pct">61%</span>
+        </div>
+        <div class="channel-item">
+          <span class="ch-name">电销</span>
+          <div class="ch-bar"><div class="ch-fill" style="width:43%"></div></div>
+          <span class="ch-pct">43%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右：运行中策略 -->
+    <div class="card">
+      <div class="card-title">运行中策略</div>
+      <div class="strategy-item">
+        <span class="s-name">低活跃促活-短信+Push</span>
+        <span class="pill pill-green">运行中</span>
+        <span class="s-count">18,400人</span>
+      </div>
+      <div class="strategy-item">
+        <span class="s-name">流失召回-电销专项</span>
+        <span class="pill pill-green">运行中</span>
+        <span class="s-count">8,200人</span>
+      </div>
+      <div class="strategy-item">
+        <span class="s-name">高价值促留-权益包</span>
+        <span class="pill pill-green">运行中</span>
+        <span class="s-count">12,100人</span>
+      </div>
+      <div class="strategy-item">
+        <span class="s-name">沉默唤醒-邮件序列</span>
+        <span class="pill pill-orange">待审批</span>
+        <span class="s-count">17,600人</span>
+      </div>
+      <div class="strategy-item">
+        <span class="s-name">节日促活-Push推送</span>
+        <span class="pill pill-gray">草稿</span>
+        <span class="s-count">—</span>
+      </div>
+      <div class="strategy-footer">
+        <div><div class="sf-num">18</div><div class="sf-label">本月完成</div></div>
+        <div><div class="sf-num">6</div><div class="sf-label">已流转</div></div>
+        <div><div class="sf-num" style="color:var(--primary)">71%</div><div class="sf-label">AI采纳</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部：团队流转概览 -->
+  <div class="card">
+    <div class="card-title">团队流转概览</div>
+    <table class="transfer-table">
+      <thead>
+        <tr>
+          <th>流出方</th>
+          <th>流入方</th>
+          <th>本月流转人数</th>
+          <th>主要原因</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>VIP运营</td>
+          <td>
+            <span class="flow-arrow">VIP运营 <span class="arrow">→</span> 平台运营</span>
+          </td>
+          <td><span class="flow-count">1,240 人</span></td>
+          <td><span class="flow-reason">效果不佳转出</span></td>
+        </tr>
+        <tr>
+          <td>平台运营</td>
+          <td>
+            <span class="flow-arrow">平台运营 <span class="arrow">→</span> 市场运营</span>
+          </td>
+          <td><span class="flow-count">860 人</span></td>
+          <td><span class="flow-reason">触达多次无转化</span></td>
+        </tr>
+        <tr>
+          <td>市场运营</td>
+          <td>
+            <span class="flow-arrow">市场运营 <span class="arrow">→</span> 平台运营</span>
+          </td>
+          <td><span class="flow-count">320 人</span></td>
+          <td><span class="flow-reason">活动参与后回流</span></td>
+        </tr>
+        <tr>
+          <td>VIP运营</td>
+          <td>
+            <span class="flow-arrow">VIP运营 <span class="arrow">→</span> 市场运营</span>
+          </td>
+          <td><span class="flow-count">480 人</span></td>
+          <td><span class="flow-reason">降级用户活动触达</span></td>
+        </tr>
+        <tr>
+          <td>平台运营</td>
+          <td>
+            <span class="flow-arrow">平台运营 <span class="arrow">→</span> VIP运营</span>
+          </td>
+          <td><span class="flow-count">210 人</span></td>
+          <td><span class="flow-reason">用户升级至高价值</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="chart-tooltip" id="chartTooltip"></div>
+
+<script>
+/* === Chart Data === */
+const CHART = {
+  days: ['06-19','06-20','06-21','06-22','06-23','06-24','06-25'],
+  series: [
+    { name: '促活', color: '#10b981', data: [22,25,28,30,33,35,36] },
+    { name: '促留', color: '#3b82f6', data: [30,29,31,30,32,31,34] },
+    { name: '召回', color: '#f59e0b', data: [18,16,15,14,13,12,13] }
+  ]
+};
+
+/* === SVG Line Chart === */
+function renderChart() {
+  const svg = document.getElementById('lineChart');
+  const W = 600, H = 220;
+  const pad = { t: 16, r: 16, b: 32, l: 40 };
+  const plotW = W - pad.l - pad.r;
+  const plotH = H - pad.t - pad.b;
+  const allVals = CHART.series.flatMap(s => s.data);
+  const maxV = Math.max(...allVals) + 4;
+  const minV = Math.min(...allVals) - 4;
+  const n = CHART.days.length;
+
+  let html = '';
+  // grid
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + plotH * i / 4;
+    const val = Math.round(maxV - (maxV - minV) * i / 4);
+    html += `<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="#f0f0f0" stroke-width="1"/>`;
+    html += `<text x="${pad.l-6}" y="${y+4}" text-anchor="end" font-size="10" fill="#9ca3af">${val}%</text>`;
+  }
+  // x labels
+  CHART.days.forEach((d, i) => {
+    const x = pad.l + plotW * i / (n - 1);
+    html += `<text x="${x}" y="${H-8}" text-anchor="middle" font-size="10" fill="#9ca3af">${d}</text>`;
+  });
+
+  const points = [];
+  CHART.series.forEach(ser => {
+    const pts = ser.data.map((v, i) => {
+      const x = pad.l + plotW * i / (n - 1);
+      const y = pad.t + plotH * (1 - (v - minV) / (maxV - minV));
+      return { x, y, v, day: CHART.days[i], name: ser.name };
+    });
+    points.push({ ser, pts });
+    const pathD = pts.map((p, i) => (i ? 'L' : 'M') + p.x + ',' + p.y).join(' ');
+    html += `<path d="${pathD}" fill="none" stroke="${ser.color}" stroke-width="2"/>`;
+    pts.forEach(p => {
+      html += `<circle class="chart-dot" cx="${p.x}" cy="${p.y}" r="5" fill="${ser.color}" stroke="#fff" stroke-width="2"
+        data-day="${p.day}" data-val="${p.v}" data-name="${p.name}" style="cursor:pointer"/>`;
+    });
+  });
+
+  svg.innerHTML = html;
+
+  const tip = document.getElementById('chartTooltip');
+  svg.querySelectorAll('.chart-dot').forEach(dot => {
+    dot.addEventListener('mouseenter', e => {
+      tip.textContent = dot.dataset.name + ' · ' + dot.dataset.day + '：' + dot.dataset.val + '%';
+      tip.style.display = 'block';
+    });
+    dot.addEventListener('mousemove', e => {
+      tip.style.left = (e.clientX + 12) + 'px';
+      tip.style.top = (e.clientY - 28) + 'px';
+    });
+    dot.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+  });
+}
+
+/* === View Tabs === */
+document.getElementById('viewTabs').addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  document.querySelectorAll('#viewTabs button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+});
+
+/* === KPI hover perspective mock === */
+const viewData = {
+  global: { users: '86,420', trend: '↑ 8% 较上月' },
+  batch: { users: '12,450', trend: '↑ 3 个新批次' },
+  team: { users: '28,600', trend: '↑ 5% VIP组' }
+};
+document.getElementById('viewTabs').addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  const d = viewData[btn.dataset.view];
+  if (d) {
+    document.getElementById('kpiUsers').textContent = d.users;
+  }
+});
+
+renderChart();
+</script>
+</body>
+</html>

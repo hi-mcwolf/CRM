@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>分层管理 - 运营CRM</title>
+  <style>
+    :root {
+      --bg: #f5f6f8; --card: #ffffff; --border: #e5e7eb; --divider: #f0f0f0;
+      --primary: #2563eb; --primary-hover: #1d4ed8;
+      --text: #1f2937; --text-2: #6b7280; --text-3: #9ca3af;
+      --success: #10b981; --warn: #f59e0b; --danger: #ef4444; --info: #3b82f6;
+      --shadow: 0 1px 3px rgba(0,0,0,0.06);
+      --radius: 8px; --content-px: 32px; --gap: 20px; --nav-h: 56px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 14px; color: var(--text); background: var(--bg); min-width: 1280px;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    .topnav {
+      height: var(--nav-h); background: var(--card); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 24px; position: sticky; top: 0; z-index: 100;
+    }
+    .topnav-logo { font-size: 18px; font-weight: 700; color: var(--primary); margin-right: 40px; }
+    .topnav-links { display: flex; align-items: stretch; height: 100%; gap: 4px; flex: 1; }
+    .topnav-links a {
+      display: flex; align-items: center; padding: 0 16px; font-size: 14px; color: var(--text-2);
+      border-bottom: 2px solid transparent;
+    }
+    .topnav-links a:hover { color: var(--primary); }
+    .topnav-links a.active { color: var(--primary); font-weight: 600; border-bottom-color: var(--primary); }
+    .topnav-right { display: flex; align-items: center; gap: 16px; margin-left: auto; }
+    .team-select {
+      height: 32px; padding: 0 28px 0 10px; border: 1px solid var(--border); border-radius: 6px;
+      background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center;
+      appearance: none; font-size: 13px; cursor: pointer;
+    }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      display: grid; place-items: center; color: #fff; font-size: 13px; font-weight: 600;
+    }
+
+    .page-header {
+      background: var(--card); padding: 16px var(--content-px) 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .breadcrumb { font-size: 13px; color: var(--text-2); margin-bottom: 10px; }
+    .breadcrumb a { color: var(--primary); }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .breadcrumb span { margin: 0 6px; color: var(--text-3); }
+    .header-row { display: flex; align-items: center; justify-content: space-between; }
+    .page-title { font-size: 18px; font-weight: 600; }
+    .header-actions { display: flex; align-items: center; gap: 12px; }
+    .batch-select {
+      height: 32px; padding: 0 28px 0 10px; border: 1px solid var(--border); border-radius: 6px;
+      background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center;
+      appearance: none; font-size: 13px;
+    }
+    .pending-btn {
+      position: relative; height: 32px; padding: 0 14px;
+      border: 1px solid var(--border); border-radius: 6px;
+      background: var(--card); font-size: 13px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .pending-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .badge-red {
+      background: var(--danger); color: #fff; font-size: 11px; font-weight: 600;
+      min-width: 18px; height: 18px; border-radius: 9px;
+      display: grid; place-items: center; padding: 0 5px;
+    }
+
+    .btn {
+      height: 32px; padding: 0 12px; border-radius: 6px;
+      border: 1px solid var(--border); background: var(--card);
+      font-size: 13px; cursor: pointer; color: var(--text);
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .btn:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-hover); color: #fff; }
+    .btn-sm { height: 28px; padding: 0 10px; font-size: 12px; }
+    .btn-link { border: 0; background: none; color: var(--primary); padding: 0; height: auto; cursor: pointer; font-size: 12px; }
+    .btn-link:hover { text-decoration: underline; }
+    .btn-dashed {
+      width: 100%; padding: 16px; border: 1px dashed var(--border);
+      border-radius: var(--radius); background: #fafafa;
+      color: var(--text-2); cursor: pointer; font-size: 13px;
+      text-align: center;
+    }
+    .btn-dashed:hover { border-color: var(--primary); color: var(--primary); background: #eff6ff; }
+
+    .main-layout {
+      display: grid; grid-template-columns: 280px 1fr;
+      gap: var(--gap); padding: var(--gap) var(--content-px) 32px;
+      align-items: start;
+    }
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+    }
+
+    /* Left tier list */
+    .tier-list-card { overflow: hidden; }
+    .tier-item {
+      padding: 14px 16px; border-bottom: 1px solid var(--divider);
+      cursor: pointer; transition: background .15s;
+    }
+    .tier-item:hover { background: #f9fafb; }
+    .tier-item.active { background: #eff6ff; border-left: 3px solid var(--primary); }
+    .tier-item-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .tier-item-count { font-size: 12px; color: var(--text-2); }
+    .tier-item-meta { font-size: 12px; color: var(--text-3); margin-bottom: 6px; }
+    .tier-item-progress { display: flex; align-items: center; gap: 8px; }
+    .mini-bar { flex: 1; height: 4px; background: var(--divider); border-radius: 2px; overflow: hidden; }
+    .mini-fill { height: 100%; background: var(--primary); border-radius: 2px; }
+    .status-dot { font-size: 11px; display: inline-flex; align-items: center; gap: 4px; }
+    .status-dot::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+    .status-dot.running::before { background: var(--success); }
+    .status-dot.pending::before { background: var(--warn); }
+    .pool-item {
+      padding: 12px 16px; background: #fef3c7; border-top: 1px solid #fde68a;
+      cursor: pointer; font-size: 13px; color: #92400e; font-weight: 500;
+    }
+    .pool-item:hover { background: #fde68a; }
+
+    /* Pills */
+    .pill {
+      display: inline-block; padding: 2px 8px; border-radius: 10px;
+      font-size: 11px; font-weight: 500;
+    }
+    .pill-green { background: #d1fae5; color: #065f46; }
+    .pill-orange { background: #fef3c7; color: #92400e; }
+    .pill-gray { background: #f3f4f6; color: #374151; }
+    .pill-blue { background: #dbeafe; color: #1e40af; }
+    .pill-red { background: #fee2e2; color: #991b1b; }
+    .pill-goal-blue { background: #dbeafe; color: #1d4ed8; }
+    .pill-goal-green { background: #d1fae5; color: #065f46; }
+    .pill-goal-orange { background: #ffedd5; color: #c2410c; }
+    .pill-channel {
+      background: #f3f4f6; color: #374151; padding: 2px 6px; font-size: 10px; margin-right: 3px;
+    }
+
+    /* Right detail */
+    .detail-area { display: flex; flex-direction: column; gap: var(--gap); }
+    .overview-card { padding: 18px 20px; }
+    .overview-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+    .overview-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+    .overview-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 13px; }
+    .goal-select {
+      height: 28px; padding: 0 8px; border: 1px solid var(--border);
+      border-radius: 4px; font-size: 12px; background: var(--card);
+    }
+    .goal-hint { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+    .overview-stats { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+    .stat-big .num { font-size: 28px; font-weight: 700; }
+    .stat-big .label { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+    .priority-dist .pd-title { font-size: 12px; color: var(--text-2); margin-bottom: 8px; }
+    .pd-bars { display: flex; gap: 4px; height: 24px; border-radius: 4px; overflow: hidden; }
+    .pd-bar { display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; font-weight: 600; }
+    .pd-bar.high { background: var(--danger); }
+    .pd-bar.mid { background: var(--warn); }
+    .pd-bar.low { background: var(--text-3); }
+    .pd-legend { display: flex; gap: 12px; margin-top: 6px; font-size: 11px; color: var(--text-2); }
+
+    /* Strategy cards */
+    .strategy-section { padding: 18px 20px; }
+    .section-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+    .strategy-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .strategy-block {
+      border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 14px; background: #fafafa;
+    }
+    .strategy-block.empty { border-style: dashed; background: transparent; display: flex; align-items: center; justify-content: center; min-height: 180px; }
+    .sb-type { font-size: 11px; color: var(--text-3); font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
+    .sb-name { font-size: 14px; font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+    .sb-channels { margin-bottom: 10px; }
+    .sb-status { margin-bottom: 10px; }
+    .progress-row { margin-bottom: 10px; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-2); margin-bottom: 4px; }
+    .progress-bar { height: 6px; background: var(--divider); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; }
+    .progress-fill.green { background: var(--success); }
+    .progress-fill.blue { background: var(--info); }
+    .progress-fill.orange { background: var(--warn); }
+    .conclusion-stats { display: flex; gap: 6px; }
+    .cs-block {
+      flex: 1; text-align: center; padding: 6px 4px; border-radius: 4px; font-size: 11px;
+    }
+    .cs-block.valid { background: #d1fae5; color: #065f46; }
+    .cs-block.invalid { background: #fee2e2; color: #991b1b; }
+    .cs-block.ongoing { background: #fef3c7; color: #92400e; }
+    .cs-block .cs-num { font-size: 14px; font-weight: 700; display: block; }
+
+    .ai-recommend {
+      margin-top: 14px; padding: 12px 14px;
+      background: linear-gradient(135deg, #eff6ff, #f5f3ff);
+      border: 1px solid #c7d2fe; border-radius: var(--radius);
+      font-size: 13px; color: #4338ca;
+    }
+    .ai-recommend strong { display: block; margin-bottom: 4px; font-size: 12px; }
+
+    .action-bar {
+      padding: 14px 20px; display: flex; gap: 10px; flex-wrap: wrap;
+    }
+
+    /* Modal */
+    .modal-mask {
+      position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200;
+      display: none; place-items: center; padding: 24px;
+    }
+    .modal-mask.open { display: grid; }
+    .modal {
+      background: var(--card); border-radius: var(--radius); width: 640px; max-width: 100%;
+      max-height: 85vh; display: flex; flex-direction: column;
+      box-shadow: 0 20px 50px rgba(0,0,0,.2);
+    }
+    .modal.sm { width: 480px; }
+    .modal-hd {
+      padding: 16px 20px; border-bottom: 1px solid var(--divider);
+      font-size: 16px; font-weight: 600;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .modal-close { border: 0; background: none; cursor: pointer; font-size: 18px; color: var(--text-3); }
+    .modal-bd { padding: 16px 20px; overflow-y: auto; flex: 1; }
+    .modal-ft {
+      padding: 14px 20px; border-top: 1px solid var(--divider);
+      display: flex; justify-content: flex-end; gap: 8px;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--divider); font-size: 13px; }
+    th { background: #fafafa; font-weight: 600; color: var(--text-2); font-size: 12px; }
+    .strategy-option {
+      padding: 12px; border: 1px solid var(--border); border-radius: 6px;
+      margin-bottom: 8px; cursor: pointer; transition: all .15s;
+    }
+    .strategy-option:hover { border-color: var(--primary); background: #eff6ff; }
+    .strategy-option.selected { border-color: var(--primary); background: #eff6ff; box-shadow: 0 0 0 2px rgba(37,99,235,.2); }
+    .strategy-option .so-name { font-weight: 600; margin-bottom: 4px; }
+    .strategy-option .so-desc { font-size: 12px; color: var(--text-2); }
+
+    .toast-wrap { position: fixed; bottom: 24px; right: 24px; z-index: 300; }
+    .toast {
+      background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--success);
+      border-radius: 6px; padding: 12px 18px; box-shadow: 0 4px 12px rgba(0,0,0,.12);
+      font-size: 13px; animation: fadeIn .25s;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  </style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-logo">运营CRM</div>
+  <div class="topnav-links">
+    <a href="dashboard.html">效果看板</a>
+    <a href="batch.html">名单管理</a>
+    <a href="user-list.html">用户列表</a>
+    <a href="tier.html" class="active">分层管理</a>
+    <a href="task.html">任务管理</a>
+  </div>
+  <div class="topnav-right">
+    <select class="team-select"><option>VIP运营</option><option>平台运营</option><option>市场运营</option></select>
+    <div class="avatar">王</div>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="tier.html">分层管理</a><span>/</span>批次#2024
+  </div>
+  <div class="header-row">
+    <div class="page-title" id="pageTitle">低活跃用户7日圈选 · 共 23,450 人</div>
+    <div class="header-actions">
+      <select class="batch-select" id="batchSelect">
+        <option value="2024">批次#2024 · 低活跃用户7日圈选</option>
+        <option value="2023">批次#2023 · 30日无消费用户</option>
+        <option value="2022">批次#2022 · 流失90天用户</option>
+      </select>
+      <button class="pending-btn" id="btnPending">
+        待接收名单 <span class="badge-red" id="pendingBadge">3</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="main-layout">
+  <!-- 左栏：分层列表 -->
+  <div class="card tier-list-card" id="tierList"></div>
+
+  <!-- 右栏：分层详情 -->
+  <div class="detail-area" id="detailArea"></div>
+</div>
+
+<!-- 待接收名单 Modal -->
+<div class="modal-mask" id="pendingMask">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hd">
+      <span>待接收名单</span>
+      <button class="modal-close" id="pendingClose">✕</button>
+    </div>
+    <div class="modal-bd">
+      <table>
+        <thead>
+          <tr><th>来源团队</th><th>用户数</th><th>原分层</th><th>流转原因</th><th>操作</th></tr>
+        </thead>
+        <tbody id="pendingBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 策略选择 Modal -->
+<div class="modal-mask" id="strategyMask">
+  <div class="modal sm" onclick="event.stopPropagation()">
+    <div class="modal-hd">
+      <span id="strategyModalTitle">选择策略</span>
+      <button class="modal-close" id="strategyClose">✕</button>
+    </div>
+    <div class="modal-bd" id="strategyOptions"></div>
+    <div class="modal-ft">
+      <button class="btn" id="strategyCancel">取消</button>
+      <button class="btn btn-primary" id="strategyConfirm">确认挂载</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+const BATCHES = {
+  '2024': { name: '低活跃用户7日圈选', total: 23450 },
+  '2023': { name: '30日无消费用户', total: 18200 },
+  '2022': { name: '流失90天用户', total: 8630 }
+};
+
+const TIERS = [
+  {
+    id: 'high', name: '高价值活跃', count: 8200, goal: '促留', strategies: 3, progress: 68, status: 'running',
+    team: 'VIP运营',
+    priority: { high: 3200, mid: 3400, low: 1600 },
+    platform: { name: 'VIP专属权益包', channels: ['短信','Push'], status: '运行中', reached: 5576, total: 8200, valid: 2800, invalid: 980, ongoing: 4420 },
+    vip: { name: '专属客服外呼', channels: ['电销'], status: '运行中', reached: 3772, total: 8200, valid: 1900, invalid: 620, ongoing: 5680 },
+    market: { name: '高价值邮件关怀', channels: ['邮件'], status: '已完成', reached: 8200, total: 8200, valid: 4100, invalid: 1200, ongoing: 2900 },
+    ai: '根据促留目标+高价值特征，推荐「权益包+专属外呼」组合，预期有效率 42%'
+  },
+  {
+    id: 'low', name: '低活跃风险', count: 9100, goal: '促活', strategies: 3, progress: 75, status: 'running',
+    team: '平台运营',
+    priority: { high: 2100, mid: 4300, low: 2700 },
+    platform: { name: '积分翻倍活动', channels: ['短信','Push'], status: '运行中', reached: 6840, total: 9100, valid: 2100, invalid: 1340, ongoing: 5660 },
+    vip: { name: '专属客服外呼', channels: ['电销'], status: '运行中', reached: 4186, total: 9100, valid: 980, invalid: 720, ongoing: 7400 },
+    market: { name: '邮件权益包', channels: ['邮件'], status: '已完成', reached: 9100, total: 9100, valid: 3200, invalid: 1800, ongoing: 4100 },
+    ai: '根据促活目标+低活跃特征，推荐「短信+Push组合」，预期有效率 28%'
+  },
+  {
+    id: 'silent', name: '沉默用户', count: 4300, goal: '促活', strategies: 2, progress: 42, status: 'pending',
+    team: '平台运营',
+    priority: { high: 800, mid: 1800, low: 1700 },
+    platform: { name: '沉默唤醒Push', channels: ['Push'], status: '待审批', reached: 1806, total: 4300, valid: 420, invalid: 380, ongoing: 3500 },
+    vip: null,
+    market: { name: '邮件序列唤醒', channels: ['邮件'], status: '运行中', reached: 2580, total: 4300, valid: 680, invalid: 520, ongoing: 3100 },
+    ai: '沉默用户建议优先使用邮件序列+Push组合触达，避免电销打扰'
+  },
+  {
+    id: 'churn', name: '流失用户', count: 1850, goal: '召回', strategies: 1, progress: 55, status: 'running',
+    team: '市场运营',
+    priority: { high: 620, mid: 780, low: 450 },
+    platform: null,
+    vip: null,
+    market: { name: '流失召回电销专项', channels: ['电销','短信'], status: '运行中', reached: 1018, total: 1850, valid: 280, invalid: 420, ongoing: 1150 },
+    ai: '流失超90天用户，电销接通率偏低，建议配合短信二次触达'
+  }
+];
+
+const PENDING = [
+  { id: 1, team: '运营组A', count: 17600, tier: '沉默用户', reason: '策略无效' },
+  { id: 2, team: '运营组B', count: 23400, tier: '低活跃风险', reason: '不符定位' },
+  { id: 3, team: '运营组A', count: 8630, tier: '流失用户', reason: '客户要求' }
+];
+
+const STRATEGY_POOL = {
+  platform: [
+    { name: '积分翻倍活动', desc: '平台促活 · 短信+Push · 历史有效率 26%' },
+    { name: '新游上线推送', desc: '平台促活 · Push · 历史有效率 18%' },
+    { name: '充值返利活动', desc: '平台促留 · 短信 · 历史有效率 32%' },
+    { name: '沉默唤醒Push', desc: '平台促活 · Push · 历史有效率 15%' }
+  ],
+  vip: [
+    { name: '专属客服外呼', desc: 'VIP促留 · 电销 · 历史有效率 38%' },
+    { name: 'VIP生日关怀', desc: 'VIP促留 · 短信+邮件 · 历史有效率 45%' },
+    { name: '高额充值激励', desc: 'VIP促活 · 电销 · 历史有效率 22%' }
+  ],
+  market: [
+    { name: '邮件权益包', desc: '市场促活 · 邮件 · 历史有效率 20%' },
+    { name: '节日活动邀请', desc: '市场召回 · 邮件+Push · 历史有效率 12%' },
+    { name: '流失召回电销专项', desc: '市场召回 · 电销+短信 · 历史有效率 16%' },
+    { name: '邮件序列唤醒', desc: '市场促活 · 邮件 · 历史有效率 14%' }
+  ]
+};
+
+const state = {
+  batch: '2024',
+  selectedTier: 'low',
+  pending: PENDING.map(p => ({ ...p })),
+  strategyModal: { open: false, type: null, selected: null }
+};
+
+function goalPill(g) {
+  const m = { '促活': 'pill-goal-blue', '促留': 'pill-goal-green', '召回': 'pill-goal-orange' };
+  return `<span class="pill ${m[g]}">${g}</span>`;
+}
+function statusPill(s) {
+  const m = { '运行中': 'pill-green', '待审批': 'pill-orange', '已完成': 'pill-blue', '草稿': 'pill-gray' };
+  return `<span class="pill ${m[s] || 'pill-gray'}">${s}</span>`;
+}
+function pct(a, b) { return b ? Math.round(a / b * 100) : 0; }
+
+function showToast(msg) {
+  document.getElementById('toastWrap').innerHTML = `<div class="toast">${msg}</div>`;
+  setTimeout(() => { document.getElementById('toastWrap').innerHTML = ''; }, 3500);
+}
+
+function renderTierList() {
+  const el = document.getElementById('tierList');
+  el.innerHTML = TIERS.map(t => `
+    <div class="tier-item ${state.selectedTier === t.id ? 'active' : ''}" data-tier="${t.id}">
+      <div class="tier-item-head">
+        <span class="pill pill-green">${t.name}</span>
+        <span class="tier-item-count">${t.count.toLocaleString()}人</span>
+      </div>
+      <div class="tier-item-meta">${goalPill(t.goal)} · 已挂载${t.strategies}策略</div>
+      <div class="tier-item-progress">
+        <div class="mini-bar"><div class="mini-fill" style="width:${t.progress}%"></div></div>
+        <span class="status-dot ${t.status === 'running' ? 'running' : 'pending'}">${t.status === 'running' ? '运行中' : '待审批'}</span>
+      </div>
+    </div>
+  `).join('') + `
+    <a class="pool-item" href="user-list.html">待处理池 320人 →</a>
+  `;
+}
+
+function renderStrategyBlock(type, label, data, tier) {
+  if (!data) {
+    return `<div class="strategy-block empty">
+      <button class="btn-dashed" data-action="mount" data-type="${type}">+ 挂载策略</button>
+    </div>`;
+  }
+  const p = pct(data.reached, data.total);
+  const fillColor = type === 'platform' ? 'blue' : type === 'vip' ? 'green' : 'orange';
+  return `<div class="strategy-block">
+    <div class="sb-type">${label}</div>
+    <div class="sb-name">
+      <span>${data.name}</span>
+      <button class="btn-link" data-action="replace" data-type="${type}">更换策略</button>
+    </div>
+    <div class="sb-channels">${data.channels.map(c => `<span class="pill pill-channel">${c}</span>`).join('')}</div>
+    <div class="sb-status">${statusPill(data.status)}</div>
+    <div class="progress-row">
+      <div class="progress-label"><span>已触达</span><span>${data.reached.toLocaleString()} / ${data.total.toLocaleString()} = ${p}%</span></div>
+      <div class="progress-bar"><div class="progress-fill ${fillColor}" style="width:${p}%"></div></div>
+    </div>
+    <div class="conclusion-stats">
+      <div class="cs-block valid"><span class="cs-num">${data.valid.toLocaleString()}</span>有效</div>
+      <div class="cs-block invalid"><span class="cs-num">${data.invalid.toLocaleString()}</span>无效</div>
+      <div class="cs-block ongoing"><span class="cs-num">${data.ongoing.toLocaleString()}</span>进行中</div>
+    </div>
+  </div>`;
+}
+
+function renderDetail() {
+  const t = TIERS.find(x => x.id === state.selectedTier);
+  if (!t) return;
+  const totalP = t.priority.high + t.priority.mid + t.priority.low;
+  const hp = Math.round(t.priority.high / totalP * 100);
+  const mp = Math.round(t.priority.mid / totalP * 100);
+  const lp = 100 - hp - mp;
+
+  document.getElementById('detailArea').innerHTML = `
+    <div class="card overview-card">
+      <div class="overview-top">
+        <div>
+          <div class="overview-title">${t.name}</div>
+          <div class="overview-meta">
+            <span>业务目标</span>
+            <select class="goal-select" id="goalSelect" data-tier="${t.id}">
+              <option ${t.goal==='促活'?'selected':''}>促活</option>
+              <option ${t.goal==='促留'?'selected':''}>促留</option>
+              <option ${t.goal==='召回'?'selected':''}>召回</option>
+            </select>
+            <div class="goal-hint">一个分层仅一个业务目标</div>
+          </div>
+        </div>
+        <div style="font-size:13px;color:var(--text-2)">归属团队：<strong>${t.team}</strong></div>
+      </div>
+      <div class="overview-stats">
+        <div class="stat-big">
+          <div class="num">${t.count.toLocaleString()}</div>
+          <div class="label">分层人数</div>
+        </div>
+        <div class="priority-dist">
+          <div class="pd-title">优先级分布</div>
+          <div class="pd-bars">
+            <div class="pd-bar high" style="width:${hp}%">${t.priority.high.toLocaleString()}</div>
+            <div class="pd-bar mid" style="width:${mp}%">${t.priority.mid.toLocaleString()}</div>
+            <div class="pd-bar low" style="width:${lp}%">${t.priority.low.toLocaleString()}</div>
+          </div>
+          <div class="pd-legend">
+            <span>高 ${t.priority.high.toLocaleString()}</span>
+            <span>中 ${t.priority.mid.toLocaleString()}</span>
+            <span>低 ${t.priority.low.toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card strategy-section">
+      <div class="section-title">策略挂载</div>
+      <div class="strategy-grid">
+        ${renderStrategyBlock('platform', '平台策略', t.platform, t)}
+        ${renderStrategyBlock('vip', 'VIP策略', t.vip, t)}
+        ${renderStrategyBlock('market', '市场策略', t.market, t)}
+      </div>
+      <div class="ai-recommend">
+        <strong>✦ AI 推荐</strong>
+        ${t.ai}
+      </div>
+    </div>
+
+    <div class="card action-bar">
+      <a class="btn btn-primary" href="user-list.html">查看用户列表</a>
+      <button class="btn" data-action="adjust">调整策略</button>
+      <button class="btn" data-action="batch-transfer">批量流转</button>
+    </div>
+  `;
+}
+
+function renderPending() {
+  document.getElementById('pendingBadge').textContent = state.pending.length;
+  document.getElementById('pendingBody').innerHTML = state.pending.length
+    ? state.pending.map(p => `
+      <tr>
+        <td>${p.team}</td>
+        <td>${p.count.toLocaleString()}人</td>
+        <td><span class="pill pill-blue">${p.tier}</span></td>
+        <td>${p.reason}</td>
+        <td>
+          <button class="btn btn-sm btn-primary" data-action="accept" data-id="${p.id}">确认接收</button>
+          <button class="btn btn-sm btn-link" data-action="detail" data-id="${p.id}">查看详情</button>
+        </td>
+      </tr>`).join('')
+    : '<tr><td colspan="5" style="text-align:center;color:var(--text-3);padding:32px">暂无待接收名单</td></tr>';
+}
+
+function openStrategyModal(type, isReplace) {
+  state.strategyModal = { open: true, type, selected: null, isReplace };
+  document.getElementById('strategyModalTitle').textContent =
+    (isReplace ? '更换' : '挂载') + ({ platform: '平台', vip: 'VIP', market: '市场' }[type] || '') + '策略';
+  document.getElementById('strategyOptions').innerHTML = STRATEGY_POOL[type].map((s, i) => `
+    <div class="strategy-option" data-idx="${i}">
+      <div class="so-name">${s.name}</div>
+      <div class="so-desc">${s.desc}</div>
+    </div>
+  `).join('');
+  document.getElementById('strategyMask').classList.add('open');
+}
+
+function closeStrategyModal() {
+  state.strategyModal = { open: false, type: null, selected: null };
+  document.getElementById('strategyMask').classList.remove('open');
+}
+
+/* Events */
+document.getElementById('tierList').addEventListener('click', e => {
+  const item = e.target.closest('[data-tier]');
+  if (item) {
+    state.selectedTier = item.dataset.tier;
+    renderTierList();
+    renderDetail();
+  }
+});
+
+document.getElementById('batchSelect').addEventListener('change', e => {
+  state.batch = e.target.value;
+  const b = BATCHES[state.batch];
+  document.getElementById('pageTitle').textContent = `${b.name} · 共 ${b.total.toLocaleString()} 人`;
+});
+
+document.getElementById('btnPending').addEventListener('click', () => {
+  renderPending();
+  document.getElementById('pendingMask').classList.add('open');
+});
+document.getElementById('pendingClose').addEventListener('click', () => {
+  document.getElementById('pendingMask').classList.remove('open');
+});
+document.getElementById('pendingMask').addEventListener('click', () => {
+  document.getElementById('pendingMask').classList.remove('open');
+});
+
+document.getElementById('pendingBody').addEventListener('click', e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  if (btn.dataset.action === 'accept') {
+    state.pending = state.pending.filter(p => p.id !== +btn.dataset.id);
+    renderPending();
+    showToast('已成功接收名单');
+  }
+  if (btn.dataset.action === 'detail') showToast('查看详情（原型演示）');
+});
+
+document.getElementById('detailArea').addEventListener('change', e => {
+  if (e.target.id === 'goalSelect') {
+    const t = TIERS.find(x => x.id === e.target.dataset.tier);
+    if (t) { t.goal = e.target.value; renderTierList(); showToast(`已将「${t.name}」业务目标更新为${t.goal}`); }
+  }
+});
+
+document.getElementById('detailArea').addEventListener('click', e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  if (btn.dataset.action === 'mount' || btn.dataset.action === 'replace') {
+    openStrategyModal(btn.dataset.type, btn.dataset.action === 'replace');
+  }
+  if (btn.dataset.action === 'adjust') {
+    openStrategyModal('platform', true);
+  }
+  if (btn.dataset.action === 'batch-transfer') {
+    showToast('已打开批量流转面板（原型演示）');
+  }
+});
+
+document.getElementById('strategyOptions').addEventListener('click', e => {
+  const opt = e.target.closest('.strategy-option');
+  if (!opt) return;
+  document.querySelectorAll('.strategy-option').forEach(o => o.classList.remove('selected'));
+  opt.classList.add('selected');
+  state.strategyModal.selected = +opt.dataset.idx;
+});
+
+document.getElementById('strategyClose').addEventListener('click', closeStrategyModal);
+document.getElementById('strategyCancel').addEventListener('click', closeStrategyModal);
+document.getElementById('strategyMask').addEventListener('click', closeStrategyModal);
+document.getElementById('strategyConfirm').addEventListener('click', () => {
+  const { type, selected } = state.strategyModal;
+  if (selected === null) { showToast('请先选择策略'); return; }
+  const s = STRATEGY_POOL[type][selected];
+  const t = TIERS.find(x => x.id === state.selectedTier);
+  if (t) {
+    const channels = s.desc.match(/(短信|Push|邮件|电销)/g) || ['短信'];
+    t[type] = {
+      name: s.name, channels, status: '待审批',
+      reached: 0, total: t.count, valid: 0, invalid: 0, ongoing: t.count
+    };
+    t.strategies = [t.platform, t.vip, t.market].filter(Boolean).length;
+  }
+  closeStrategyModal();
+  renderTierList();
+  renderDetail();
+  showToast(`已挂载策略「${s.name}」`);
+});
+
+renderTierList();
+renderDetail();
+renderPending();
+</script>
+</body>
+</html>

@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>任务管理 - 运营CRM</title>
+  <style>
+    :root {
+      --bg: #f5f6f8; --card: #ffffff; --border: #e5e7eb; --divider: #f0f0f0;
+      --primary: #2563eb; --primary-hover: #1d4ed8;
+      --text: #1f2937; --text-2: #6b7280; --text-3: #9ca3af;
+      --success: #10b981; --warn: #f59e0b; --danger: #ef4444; --info: #3b82f6;
+      --shadow: 0 1px 3px rgba(0,0,0,0.06);
+      --radius: 8px; --content-px: 32px; --gap: 20px; --nav-h: 56px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 14px; color: var(--text); background: var(--bg); min-width: 1280px;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    .topnav {
+      height: var(--nav-h); background: var(--card); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 24px; position: sticky; top: 0; z-index: 100;
+    }
+    .topnav-logo { font-size: 18px; font-weight: 700; color: var(--primary); margin-right: 40px; }
+    .topnav-links { display: flex; align-items: stretch; height: 100%; gap: 4px; flex: 1; }
+    .topnav-links a {
+      display: flex; align-items: center; padding: 0 16px; font-size: 14px; color: var(--text-2);
+      border-bottom: 2px solid transparent;
+    }
+    .topnav-links a:hover { color: var(--primary); }
+    .topnav-links a.active { color: var(--primary); font-weight: 600; border-bottom-color: var(--primary); }
+    .topnav-right { display: flex; align-items: center; gap: 16px; margin-left: auto; }
+    .team-select {
+      height: 32px; padding: 0 28px 0 10px; border: 1px solid var(--border); border-radius: 6px;
+      background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center;
+      appearance: none; font-size: 13px; cursor: pointer;
+    }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      display: grid; place-items: center; color: #fff; font-size: 13px; font-weight: 600;
+    }
+
+    .page-header {
+      background: var(--card); padding: 24px var(--content-px);
+      border-bottom: 1px solid var(--border);
+    }
+    .page-header h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+    .page-header p { font-size: 13px; color: var(--text-2); }
+
+    .tabs-bar {
+      background: var(--card); padding: 0 var(--content-px);
+      border-bottom: 1px solid var(--border);
+      display: flex; gap: 0;
+    }
+    .tab-item {
+      padding: 12px 18px; font-size: 14px; color: var(--text-2);
+      cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+      background: none; border-top: 0; border-left: 0; border-right: 0;
+    }
+    .tab-item:hover { color: var(--primary); }
+    .tab-item.active { color: var(--primary); font-weight: 600; border-bottom-color: var(--primary); }
+    .tab-count { font-size: 12px; color: var(--text-3); margin-left: 2px; }
+
+    .filter-bar {
+      padding: var(--gap) var(--content-px) 0;
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+    }
+    .field label { display: block; font-size: 12px; color: var(--text-2); margin-bottom: 4px; }
+    .field input, .field select {
+      width: 100%; height: 32px; padding: 0 10px;
+      border: 1px solid var(--border); border-radius: 6px; font-size: 13px; background: var(--card);
+    }
+
+    .task-list { padding: var(--gap) var(--content-px) 32px; display: flex; flex-direction: column; gap: 14px; }
+    .task-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px;
+    }
+    .task-head {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;
+    }
+    .task-name { font-size: 15px; font-weight: 600; flex: 1; min-width: 200px; }
+    .task-info {
+      display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--text-2);
+      margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--divider);
+    }
+    .task-info span strong { color: var(--text); font-weight: 500; }
+    .task-progress { margin-bottom: 12px; }
+    .progress-label {
+      display: flex; justify-content: space-between; font-size: 12px;
+      color: var(--text-2); margin-bottom: 6px;
+    }
+    .progress-bar { height: 8px; background: var(--divider); border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 4px; background: var(--primary); transition: width .3s; }
+    .progress-fill.paused { background: var(--warn); }
+    .progress-fill.done { background: var(--success); }
+    .progress-fill.waiting { background: var(--text-3); width: 0 !important; }
+  </style>
+</head>
+<body>
+<!-- styles continued in second style block for pills, conclusion, footer, modal -->
+<style>
+    .conclusion-row { display: flex; gap: 8px; margin-bottom: 14px; }
+    .cs-block {
+      padding: 6px 12px; border-radius: 4px; font-size: 12px;
+    }
+    .cs-block.valid { background: #d1fae5; color: #065f46; }
+    .cs-block.invalid { background: #fee2e2; color: #991b1b; }
+    .cs-block.ongoing { background: #fef3c7; color: #92400e; }
+    .cs-block .num { font-weight: 700; margin-right: 4px; }
+    .task-foot {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    }
+    .task-meta { font-size: 12px; color: var(--text-3); }
+    .task-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .pill {
+      display: inline-block; padding: 2px 8px; border-radius: 10px;
+      font-size: 11px; font-weight: 500; white-space: nowrap;
+    }
+    .pill-green { background: #d1fae5; color: #065f46; }
+    .pill-orange { background: #fef3c7; color: #92400e; }
+    .pill-gray { background: #f3f4f6; color: #374151; }
+    .pill-blue { background: #dbeafe; color: #1e40af; }
+    .pill-red { background: #fee2e2; color: #991b1b; }
+    .pill-goal-blue { background: #dbeafe; color: #1d4ed8; }
+    .pill-goal-green { background: #d1fae5; color: #065f46; }
+    .pill-goal-orange { background: #ffedd5; color: #c2410c; }
+    .pill-type { background: #f3f4f6; color: #374151; }
+    .pill-channel { background: #f3f4f6; color: #374151; margin-right: 3px; }
+
+    .btn {
+      height: 28px; padding: 0 10px; border-radius: 6px;
+      border: 1px solid var(--border); background: var(--card);
+      font-size: 12px; cursor: pointer; color: var(--text);
+      display: inline-flex; align-items: center;
+    }
+    .btn:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-hover); color: #fff; }
+    .btn-danger { color: var(--danger); border-color: #fecaca; }
+    .btn-danger:hover { background: #fee2e2; }
+    .btn:disabled { opacity: .4; cursor: not-allowed; pointer-events: none; }
+
+    .empty-state { text-align: center; padding: 60px; color: var(--text-3); }
+
+    .modal-mask {
+      position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200;
+      display: none; place-items: center; padding: 24px;
+    }
+    .modal-mask.open { display: grid; }
+    .modal {
+      background: var(--card); border-radius: var(--radius); width: 680px; max-width: 100%;
+      max-height: 90vh; display: flex; flex-direction: column;
+      box-shadow: 0 20px 50px rgba(0,0,0,.2);
+    }
+    .modal.sm { width: 400px; }
+    .modal-hd {
+      padding: 16px 20px; border-bottom: 1px solid var(--divider);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .modal-hd h3 { font-size: 16px; font-weight: 600; }
+    .modal-close { border: 0; background: none; cursor: pointer; font-size: 18px; color: var(--text-3); }
+    .modal-bd { padding: 18px 20px; overflow-y: auto; flex: 1; }
+    .modal-ft {
+      padding: 14px 20px; border-top: 1px solid var(--divider);
+      display: flex; justify-content: flex-end; gap: 8px;
+    }
+    .detail-section { margin-bottom: 20px; }
+    .detail-section h4 { font-size: 13px; font-weight: 600; color: var(--text-2); margin-bottom: 10px; }
+    .chart-svg { width: 100%; height: 160px; display: block; }
+    .funnel { display: flex; flex-direction: column; gap: 8px; }
+    .funnel-step { display: flex; align-items: center; gap: 12px; }
+    .funnel-bar {
+      height: 28px; border-radius: 4px; display: flex; align-items: center;
+      padding: 0 12px; color: #fff; font-size: 12px; font-weight: 600;
+      min-width: 80px; transition: width .3s;
+    }
+    .funnel-bar.step1 { background: var(--info); }
+    .funnel-bar.step2 { background: var(--primary); }
+    .funnel-bar.step3 { background: var(--success); }
+    .funnel-label { font-size: 12px; color: var(--text-2); width: 48px; }
+    .detail-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .detail-table th, .detail-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--divider); }
+    .detail-table th { background: #fafafa; font-weight: 600; color: var(--text-2); font-size: 12px; }
+    .log-list { font-size: 13px; }
+    .log-item { padding: 8px 0; border-bottom: 1px solid var(--divider); display: flex; gap: 12px; }
+    .log-item:last-child { border-bottom: 0; }
+    .log-time { color: var(--text-3); font-size: 12px; white-space: nowrap; }
+    .log-type { font-weight: 500; min-width: 48px; }
+
+    .toast-wrap { position: fixed; bottom: 24px; right: 24px; z-index: 300; }
+    .toast {
+      background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--success);
+      border-radius: 6px; padding: 12px 18px; box-shadow: 0 4px 12px rgba(0,0,0,.12); font-size: 13px;
+      animation: fadeIn .25s;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    .confirm-text { font-size: 14px; color: var(--text-2); line-height: 1.6; }
+</style>
+
+<nav class="topnav">
+  <div class="topnav-logo">运营CRM</div>
+  <div class="topnav-links">
+    <a href="dashboard.html">效果看板</a>
+    <a href="batch.html">名单管理</a>
+    <a href="user-list.html">用户列表</a>
+    <a href="tier.html">分层管理</a>
+    <a href="task.html" class="active">任务管理</a>
+  </div>
+  <div class="topnav-right">
+    <select class="team-select"><option>VIP运营</option><option>平台运营</option><option>市场运营</option></select>
+    <div class="avatar">李</div>
+  </div>
+</nav>
+
+<div class="page-header">
+  <h1>任务管理</h1>
+  <p>管理各策略的执行情况，支持暂停与终止</p>
+</div>
+
+<div class="tabs-bar" id="tabsBar"></div>
+
+<div class="filter-bar">
+  <div class="field"><label>归属团队</label>
+    <select id="fTeam"><option value="">全部</option><option>VIP运营</option><option>平台运营</option><option>市场运营</option></select>
+  </div>
+  <div class="field"><label>业务目标</label>
+    <select id="fGoal"><option value="">全部</option><option>促活</option><option>促留</option><option>召回</option></select>
+  </div>
+  <div class="field"><label>策略类型</label>
+    <select id="fType"><option value="">全部</option><option>平台策略</option><option>VIP策略</option><option>市场策略</option></select>
+  </div>
+  <div class="field"><label>批次</label>
+    <select id="fBatch"><option value="">全部</option><option>#2024</option><option>#2023</option><option>#2022</option><option>#2021</option><option>#2018</option></select>
+  </div>
+  <div class="field"><label>搜索</label>
+    <input type="text" id="fSearch" placeholder="任务名称..." />
+  </div>
+</div>
+
+<div class="task-list" id="taskList"></div>
+
+<!-- 详情 Modal -->
+<div class="modal-mask" id="detailMask">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hd">
+      <div><h3 id="detailTitle">任务详情</h3></div>
+      <button class="modal-close" id="detailClose">✕</button>
+    </div>
+    <div class="modal-bd" id="detailBody"></div>
+    <div class="modal-ft">
+      <button class="btn" id="detailCloseBtn">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 终止确认 Modal -->
+<div class="modal-mask" id="confirmMask">
+  <div class="modal sm" onclick="event.stopPropagation()">
+    <div class="modal-hd"><h3>确认终止任务</h3></div>
+    <div class="modal-bd">
+      <p class="confirm-text">终止后任务将不可恢复，已触达用户将停止后续策略执行。确定要终止该任务吗？</p>
+    </div>
+    <div class="modal-ft">
+      <button class="btn" id="confirmCancel">取消</button>
+      <button class="btn btn-danger" id="confirmOk">确认终止</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+const TASKS = [
+  {
+    id: 1, name: '低活跃风险-平台策略-积分翻倍活动', status: '执行中', team: '平台运营', type: '平台策略',
+    batch: '#2024', tier: '低活跃风险', goal: '促活', channels: ['短信','Push'],
+    reached: 6840, total: 9100, valid: 2100, invalid: 1340, ongoing: 3400,
+    creator: '李运营', created: '06-20',
+    trend: [820, 960, 1050, 980, 1100, 1020, 910],
+    funnel: { reach: 6840, response: 3440, convert: 2100 },
+    channels_detail: [
+      { ch: '短信', sent: 4200, rate: 92, convert: 38 },
+      { ch: 'Push', sent: 2640, rate: 61, convert: 22 }
+    ],
+    logs: [
+      { time: '06-20 09:30', type: '创建', user: '李运营' },
+      { time: '06-20 10:00', type: '审批', user: '张主管' },
+      { time: '06-21 08:00', type: '执行', user: '系统' }
+    ]
+  },
+  {
+    id: 2, name: '流失召回-VIP策略-专属客服外呼', status: '执行中', team: 'VIP运营', type: 'VIP策略',
+    batch: '#2022', tier: '流失用户', goal: '召回', channels: ['电销'],
+    reached: 5210, total: 8630, valid: 980, invalid: 2100, ongoing: 2130,
+    creator: '王运营', created: '06-15',
+    trend: [680, 720, 750, 810, 790, 760, 700],
+    funnel: { reach: 5210, response: 3080, convert: 980 },
+    channels_detail: [{ ch: '电销', sent: 5210, rate: 43, convert: 19 }],
+    logs: [
+      { time: '06-15 10:00', type: '创建', user: '王运营' },
+      { time: '06-15 14:00', type: '审批', user: '李主管' }
+    ]
+  },
+  {
+    id: 3, name: '高价值促留-市场策略-权益包', status: '已完成', team: '市场运营', type: '市场策略',
+    batch: '#2021', tier: '高价值活跃', goal: '促留', channels: ['邮件'],
+    reached: 12100, total: 12100, valid: 4200, invalid: 1100, ongoing: 0,
+    creator: '李运营', created: '06-12',
+    trend: [1800, 1950, 2100, 2000, 2050, 2100, 2100],
+    funnel: { reach: 12100, response: 5300, convert: 4200 },
+    channels_detail: [{ ch: '邮件', sent: 12100, rate: 76, convert: 35 }],
+    logs: [
+      { time: '06-12 16:00', type: '创建', user: '李运营' },
+      { time: '06-18 18:00', type: '完成', user: '系统' }
+    ]
+  },
+  {
+    id: 4, name: '沉默唤醒-平台策略-邮件序列', status: '待审批', team: '平台运营', type: '平台策略',
+    batch: '#2018', tier: '沉默用户', goal: '促活', channels: ['邮件'],
+    reached: 0, total: 17600, valid: 0, invalid: 0, ongoing: 0,
+    creator: '张运营', created: '06-21',
+    trend: [0,0,0,0,0,0,0],
+    funnel: { reach: 0, response: 0, convert: 0 },
+    channels_detail: [{ ch: '邮件', sent: 0, rate: 0, convert: 0 }],
+    logs: [{ time: '06-21 11:00', type: '创建', user: '张运营' }]
+  },
+  {
+    id: 5, name: '节日促活-VIP策略-Push推送', status: '已暂停', team: 'VIP运营', type: 'VIP策略',
+    batch: '#2024', tier: '高价值活跃', goal: '促活', channels: ['Push'],
+    reached: 3200, total: 8200, valid: 680, invalid: 420, ongoing: 2100,
+    creator: '李运营', created: '06-19',
+    trend: [520, 580, 610, 590, 500, 400, 0],
+    funnel: { reach: 3200, response: 1100, convert: 680 },
+    channels_detail: [{ ch: 'Push', sent: 3200, rate: 58, convert: 21 }],
+    logs: [
+      { time: '06-19 09:00', type: '创建', user: '李运营' },
+      { time: '06-22 16:00', type: '暂停', user: '李运营' }
+    ]
+  },
+  {
+    id: 6, name: '30日无消费促活-平台策略-短信', status: '已完成', team: '平台运营', type: '平台策略',
+    batch: '#2023', tier: '低活跃风险', goal: '促活', channels: ['短信'],
+    reached: 18200, total: 18200, valid: 5600, invalid: 3200, ongoing: 0,
+    creator: '王运营', created: '06-10',
+    trend: [2600, 2700, 2650, 2580, 2620, 2640, 2610],
+    funnel: { reach: 18200, response: 8800, convert: 5600 },
+    channels_detail: [{ ch: '短信', sent: 18200, rate: 89, convert: 31 }],
+    logs: [
+      { time: '06-10 09:00', type: '创建', user: '王运营' },
+      { time: '06-17 20:00', type: '完成', user: '系统' }
+    ]
+  },
+  {
+    id: 7, name: '百家乐偏好用户-市场策略-活动邀请', status: '执行中', team: '市场运营', type: '市场策略',
+    batch: '#2024', tier: '高价值活跃', goal: '促留', channels: ['邮件','Push'],
+    reached: 4800, total: 8200, valid: 1200, invalid: 680, ongoing: 2920,
+    creator: '张运营', created: '06-18', trend: [600,680,720,700,750,680,670],
+    funnel: { reach: 4800, response: 1880, convert: 1200 },
+    channels_detail: [{ ch: '邮件', sent: 2800, rate: 72, convert: 28 }, { ch: 'Push', sent: 2000, rate: 55, convert: 18 }],
+    logs: [{ time: '06-18 14:00', type: '创建', user: '张运营' }]
+  },
+  {
+    id: 8, name: '新用户培育-VIP策略-欢迎外呼', status: '待审批', team: 'VIP运营', type: 'VIP策略',
+    batch: '#2019', tier: '低活跃风险', goal: '促活', channels: ['电销'],
+    reached: 0, total: 9870, valid: 0, invalid: 0, ongoing: 0,
+    creator: '王运营', created: '06-22', trend: [0,0,0,0,0,0,0],
+    funnel: { reach: 0, response: 0, convert: 0 },
+    channels_detail: [{ ch: '电销', sent: 0, rate: 0, convert: 0 }],
+    logs: [{ time: '06-22 10:00', type: '创建', user: '王运营' }]
+  }
+];
+
+const TABS = [
+  { key: 'all', label: '全部' },
+  { key: '执行中', label: '执行中' },
+  { key: '待审批', label: '待审批' },
+  { key: '已暂停', label: '已暂停' },
+  { key: '已完成', label: '已完成' }
+];
+
+const state = {
+  tab: 'all',
+  filters: { team: '', goal: '', type: '', batch: '', search: '' },
+  confirmTaskId: null
+};
+
+function statusPill(s) {
+  const m = {
+    '执行中': 'pill-green', '待审批': 'pill-orange', '已暂停': 'pill-orange',
+    '已完成': 'pill-blue', '已终止': 'pill-red'
+  };
+  return `<span class="pill ${m[s] || 'pill-gray'}">${s}</span>`;
+}
+function goalPill(g) {
+  const m = { '促活': 'pill-goal-blue', '促留': 'pill-goal-green', '召回': 'pill-goal-orange' };
+  return `<span class="pill ${m[g]}">${g}</span>`;
+}
+function pct(a, b) { return b ? Math.round(a / b * 100) : 0; }
+
+function showToast(msg) {
+  document.getElementById('toastWrap').innerHTML = `<div class="toast">${msg}</div>`;
+  setTimeout(() => { document.getElementById('toastWrap').innerHTML = ''; }, 3500);
+}
+
+function getFiltered() {
+  return TASKS.filter(t => {
+    if (state.tab !== 'all' && t.status !== state.tab) return false;
+    const f = state.filters;
+    if (f.team && t.team !== f.team) return false;
+    if (f.goal && t.goal !== f.goal) return false;
+    if (f.type && t.type !== f.type) return false;
+    if (f.batch && t.batch !== f.batch) return false;
+    if (f.search && !t.name.includes(f.search)) return false;
+    return true;
+  });
+}
+
+function tabCounts() {
+  const c = { all: TASKS.length };
+  TASKS.forEach(t => { c[t.status] = (c[t.status] || 0) + 1; });
+  return c;
+}
+
+function renderTabs() {
+  const counts = tabCounts();
+  document.getElementById('tabsBar').innerHTML = TABS.map(tab => `
+    <button class="tab-item ${state.tab === tab.key ? 'active' : ''}" data-tab="${tab.key}">
+      ${tab.label}<span class="tab-count">(${tab.key === 'all' ? counts.all : (counts[tab.key] || 0)})</span>
+    </button>
+  `).join('');
+}
+
+function renderActions(t) {
+  if (t.status === '已终止') {
+    return `<button class="btn" disabled>已终止</button>`;
+  }
+  if (t.status === '待审批') {
+    return `<button class="btn btn-primary" data-action="approve" data-id="${t.id}">审批</button>
+      <button class="btn" data-action="edit" data-id="${t.id}">编辑</button>`;
+  }
+  if (t.status === '已完成') {
+    return `<button class="btn" data-action="detail" data-id="${t.id}">查看详情</button>
+      <button class="btn" data-action="transfer" data-id="${t.id}">发起流转</button>`;
+  }
+  if (t.status === '已暂停') {
+    return `<button class="btn" data-action="detail" data-id="${t.id}">查看详情</button>
+      <button class="btn" data-action="resume" data-id="${t.id}">恢复</button>
+      <button class="btn btn-danger" data-action="terminate" data-id="${t.id}">终止</button>`;
+  }
+  if (t.status === '执行中') {
+    return `<button class="btn" data-action="detail" data-id="${t.id}">查看详情</button>
+      <button class="btn" data-action="pause" data-id="${t.id}">暂停</button>`;
+  }
+  return '';
+}
+
+function renderProgress(t) {
+  if (t.status === '待审批') {
+    return `<div class="task-progress">
+      <div class="progress-label"><span>等待审批</span><span>—</span></div>
+      <div class="progress-bar"><div class="progress-fill waiting"></div></div>
+    </div>`;
+  }
+  const p = pct(t.reached, t.total);
+  const cls = t.status === '已完成' ? 'done' : t.status === '已暂停' ? 'paused' : '';
+  const label = t.channels.includes('电销') ? '已外呼' : '已触达';
+  const pauseNote = t.status === '已暂停' ? '（暂停于此）' : '';
+  return `<div class="task-progress">
+    <div class="progress-label"><span>${label} ${t.reached.toLocaleString()} / ${t.total.toLocaleString()} (${p}%)${pauseNote}</span></div>
+    <div class="progress-bar"><div class="progress-fill ${cls}" style="width:${p}%"></div></div>
+  </div>`;
+}
+
+function renderConclusion(t) {
+  if (t.status === '待审批') return '<div class="conclusion-row"><span style="color:var(--text-3)">—</span></div>';
+  return `<div class="conclusion-row">
+    <span class="cs-block valid"><span class="num">${t.valid.toLocaleString()}</span>有效</span>
+    <span class="cs-block invalid"><span class="num">${t.invalid.toLocaleString()}</span>无效</span>
+    <span class="cs-block ongoing"><span class="num">${t.ongoing.toLocaleString()}</span>进行中</span>
+  </div>`;
+}
+
+function renderTaskList() {
+  const list = getFiltered();
+  const el = document.getElementById('taskList');
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state">暂无匹配任务</div>';
+    return;
+  }
+  el.innerHTML = list.map(t => `
+    <div class="task-card" data-id="${t.id}">
+      <div class="task-head">
+        <div class="task-name">${t.name}</div>
+        ${statusPill(t.status)}
+        <span class="pill pill-type">${t.team}</span>
+        <span class="pill pill-type">${t.type}</span>
+      </div>
+      <div class="task-info">
+        <span>批次 <strong>${t.batch}</strong></span>
+        <span>分层 <strong>${t.tier}</strong></span>
+        <span>${goalPill(t.goal)}</span>
+        <span>${t.channels.map(c => `<span class="pill pill-channel">${c}</span>`).join('')}</span>
+      </div>
+      ${renderProgress(t)}
+      ${renderConclusion(t)}
+      <div class="task-foot">
+        <span class="task-meta">${t.creator} · ${t.created}</span>
+        <div class="task-actions">${renderActions(t)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderTrendSvg(data) {
+  const W = 600, H = 160, pad = { t: 16, r: 16, b: 28, l: 40 };
+  const max = Math.max(...data, 1) * 1.1;
+  const days = ['06-19','06-20','06-21','06-22','06-23','06-24','06-25'];
+  let bars = '';
+  const bw = (W - pad.l - pad.r) / data.length * 0.6;
+  const gap = (W - pad.l - pad.r) / data.length;
+  data.forEach((v, i) => {
+    const x = pad.l + gap * i + gap * 0.2;
+    const h = v / max * (H - pad.t - pad.b);
+    const y = H - pad.b - h;
+    bars += `<rect x="${x}" y="${y}" width="${bw}" height="${h}" fill="#2563eb" rx="2"/>`;
+    bars += `<text x="${x + bw/2}" y="${H-8}" text-anchor="middle" font-size="10" fill="#9ca3af">${days[i]}</text>`;
+  });
+  return `<svg class="chart-svg" viewBox="0 0 ${W} ${H}">${bars}</svg>`;
+}
+
+function renderFunnel(f) {
+  const max = f.reach || 1;
+  const w1 = 100, w2 = Math.round(f.response / max * 100), w3 = Math.round(f.convert / max * 100);
+  return `<div class="funnel">
+    <div class="funnel-step"><span class="funnel-label">触达</span><div class="funnel-bar step1" style="width:${w1}%">${f.reach.toLocaleString()}</div></div>
+    <div class="funnel-step"><span class="funnel-label">响应</span><div class="funnel-bar step2" style="width:${Math.max(w2,15)}%">${f.response.toLocaleString()}</div></div>
+    <div class="funnel-step"><span class="funnel-label">转化</span><div class="funnel-bar step3" style="width:${Math.max(w3,12)}%">${f.convert.toLocaleString()}</div></div>
+  </div>`;
+}
+
+function openDetail(id) {
+  const t = TASKS.find(x => x.id === id);
+  if (!t) return;
+  document.getElementById('detailTitle').textContent = t.name;
+  document.getElementById('detailBody').innerHTML = `
+    <div style="margin-bottom:16px">${statusPill(t.status)}</div>
+    <div class="detail-section">
+      <h4>每日触达量趋势（近7天）</h4>
+      ${renderTrendSvg(t.trend)}
+    </div>
+    <div class="detail-section">
+      <h4>用户响应漏斗</h4>
+      ${renderFunnel(t.funnel)}
+    </div>
+    <div class="detail-section">
+      <h4>各渠道明细</h4>
+      <table class="detail-table">
+        <thead><tr><th>渠道</th><th>触达数</th><th>触达率</th><th>转化率</th></tr></thead>
+        <tbody>${t.channels_detail.map(c => `
+          <tr><td>${c.ch}</td><td>${c.sent.toLocaleString()}</td><td>${c.rate}%</td><td>${c.convert}%</td></tr>
+        `).join('')}</tbody>
+      </table>
+    </div>
+    <div class="detail-section">
+      <h4>操作日志</h4>
+      <div class="log-list">${t.logs.map(l => `
+        <div class="log-item">
+          <span class="log-time">${l.time}</span>
+          <span class="log-type">${l.type}</span>
+          <span>${l.user}</span>
+        </div>
+      `).join('')}</div>
+    </div>`;
+  document.getElementById('detailMask').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detailMask').classList.remove('open');
+}
+
+function getTask(id) { return TASKS.find(t => t.id === id); }
+
+/* Events */
+document.getElementById('tabsBar').addEventListener('click', e => {
+  const tab = e.target.closest('[data-tab]');
+  if (!tab) return;
+  state.tab = tab.dataset.tab;
+  renderTabs();
+  renderTaskList();
+});
+
+['fTeam','fGoal','fType','fBatch'].forEach(id => {
+  document.getElementById(id).addEventListener('change', e => {
+    const key = { fTeam:'team', fGoal:'goal', fType:'type', fBatch:'batch' }[id];
+    state.filters[key] = e.target.value;
+    renderTaskList();
+  });
+});
+document.getElementById('fSearch').addEventListener('input', e => {
+  state.filters.search = e.target.value.trim();
+  renderTaskList();
+});
+
+document.getElementById('taskList').addEventListener('click', e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const id = +btn.dataset.id;
+  const t = getTask(id);
+  if (!t) return;
+
+  if (btn.dataset.action === 'detail') openDetail(id);
+  if (btn.dataset.action === 'pause') {
+    t.status = '已暂停';
+    t.logs.push({ time: '今日', type: '暂停', user: '李运营' });
+    showToast('任务已暂停');
+    renderTabs(); renderTaskList();
+  }
+  if (btn.dataset.action === 'resume') {
+    t.status = '执行中';
+    t.logs.push({ time: '今日', type: '恢复', user: '李运营' });
+    showToast('任务已恢复执行');
+    renderTabs(); renderTaskList();
+  }
+  if (btn.dataset.action === 'terminate') {
+    state.confirmTaskId = id;
+    document.getElementById('confirmMask').classList.add('open');
+  }
+  if (btn.dataset.action === 'approve') {
+    t.status = '执行中';
+    t.logs.push({ time: '今日', type: '审批', user: '张主管' });
+    showToast('任务已审批通过，开始执行');
+    renderTabs(); renderTaskList();
+  }
+  if (btn.dataset.action === 'edit') showToast('打开任务编辑（原型演示）');
+  if (btn.dataset.action === 'transfer') showToast('已打开发起流转面板（原型演示）');
+});
+
+document.getElementById('detailClose').addEventListener('click', closeDetail);
+document.getElementById('detailCloseBtn').addEventListener('click', closeDetail);
+document.getElementById('detailMask').addEventListener('click', closeDetail);
+
+document.getElementById('confirmCancel').addEventListener('click', () => {
+  state.confirmTaskId = null;
+  document.getElementById('confirmMask').classList.remove('open');
+});
+document.getElementById('confirmMask').addEventListener('click', () => {
+  state.confirmTaskId = null;
+  document.getElementById('confirmMask').classList.remove('open');
+});
+document.getElementById('confirmOk').addEventListener('click', () => {
+  const t = getTask(state.confirmTaskId);
+  if (t) {
+    t.status = '已终止';
+    t.logs.push({ time: '今日', type: '终止', user: '李运营' });
+    showToast('任务已终止');
+  }
+  state.confirmTaskId = null;
+  document.getElementById('confirmMask').classList.remove('open');
+  renderTabs();
+  renderTaskList();
+});
+
+renderTabs();
+renderTaskList();
+</script>
+</body>
+</html>

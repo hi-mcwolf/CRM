@@ -1,0 +1,1290 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>运营CRM产品方案原型</title>
+  <style>
+    /* === Design Tokens === */
+    :root {
+      --bg: #f5f6f8;
+      --card: #ffffff;
+      --line: #e8eaed;
+      --line-strong: #d9dde3;
+      --text: #1a1f2e;
+      --text-2: #4b5563;
+      --muted: #8c8c8c;
+      --primary: #01696f;
+      --primary-hover: #01585d;
+      --primary-soft: #e6f3f4;
+      --danger: #c2413c;
+      --danger-soft: #fef2f2;
+      --success: #0f766e;
+      --success-soft: #ecfdf5;
+      --warn: #b45309;
+      --warn-soft: #fffbeb;
+      --info: #2563eb;
+      --info-soft: #eff6ff;
+      --purple: #7c3aed;
+      --purple-soft: #f5f3ff;
+      --shadow: 0 1px 2px rgba(16,24,40,.06);
+      --shadow-lg: 0 8px 24px rgba(16,24,40,.12);
+      --radius: 10px;
+      --sidebar-w: 220px;
+      --header-h: 56px;
+      --drawer-w: 640px;
+    }
+    [data-theme="dark"] {
+      --bg: #111827;
+      --card: #1f2937;
+      --line: #374151;
+      --line-strong: #4b5563;
+      --text: #f3f4f6;
+      --text-2: #d1d5db;
+      --muted: #9ca3af;
+      --primary-soft: #134e4a;
+      --danger-soft: #450a0a;
+      --success-soft: #064e3b;
+      --warn-soft: #451a03;
+      --info-soft: #1e3a5f;
+      --purple-soft: #3b0764;
+      --shadow: 0 1px 2px rgba(0,0,0,.3);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,.4);
+    }
+
+    /* === Base === */
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--bg);
+      min-width: 1360px;
+    }
+    button, input, select, textarea { font: inherit; }
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* === Layout === */
+    .app { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--card);
+      border-right: 1px solid var(--line);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 20;
+    }
+    .brand { padding: 16px; border-bottom: 1px solid var(--line); }
+    .brand-title { font-size: 15px; font-weight: 700; color: var(--primary); }
+    .brand-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .nav-group { padding: 8px 0; flex: 1; overflow: auto; }
+    .nav-l1 { padding: 10px 16px 6px; font-size: 12px; font-weight: 600; color: var(--muted); }
+    .nav-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 16px 9px 20px;
+      color: var(--text-2);
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: all .15s;
+    }
+    .nav-item:hover { background: var(--primary-soft); color: var(--primary); }
+    .nav-item.active {
+      background: var(--primary-soft);
+      color: var(--primary);
+      border-left-color: var(--primary);
+      font-weight: 600;
+    }
+    .nav-item.disabled { opacity: .45; cursor: not-allowed; }
+    .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .sidebar-foot { padding: 12px 16px; border-top: 1px solid var(--line); font-size: 11px; color: var(--muted); }
+
+    .main-wrap { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .header {
+      height: var(--header-h);
+      background: var(--card);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 15;
+    }
+    .header-left { display: flex; flex-direction: column; min-width: 180px; }
+    .header-title { font-size: 16px; font-weight: 600; line-height: 1.2; }
+    .breadcrumb { font-size: 12px; color: var(--muted); }
+    .breadcrumb span { margin: 0 4px; }
+    .header-search { flex: 1; max-width: 360px; position: relative; }
+    .header-search input {
+      width: 100%; height: 34px; padding: 0 12px 0 34px;
+      border: 1px solid var(--line-strong); border-radius: 8px;
+      background: var(--bg); color: var(--text);
+    }
+    .header-search input:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
+    .header-search .search-icon { position: absolute; left: 10px; top: 9px; color: var(--muted); }
+    .search-panel {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+      box-shadow: var(--shadow-lg); display: none; max-height: 280px; overflow: auto; z-index: 50;
+    }
+    .search-panel.open { display: block; }
+    .search-panel .sp-title { padding: 8px 12px; font-size: 11px; color: var(--muted); font-weight: 600; }
+    .search-panel .sp-item {
+      padding: 8px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px;
+    }
+    .search-panel .sp-item:hover { background: var(--primary-soft); }
+    .header-tools { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+    .date-pill {
+      display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
+    }
+    .date-pill button {
+      padding: 6px 12px; border: 0; background: transparent; cursor: pointer; color: var(--text-2);
+    }
+    .date-pill button.active { background: var(--primary); color: #fff; }
+    .icon-btn {
+      width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 8px;
+      background: var(--card); cursor: pointer; display: grid; place-items: center; color: var(--text-2);
+      position: relative;
+    }
+    .icon-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .badge-dot {
+      position: absolute; top: -2px; right: -2px;
+      width: 8px; height: 8px; border-radius: 50%; background: var(--danger);
+    }
+    .role-pill {
+      padding: 6px 12px; border: 1px solid var(--line); border-radius: 16px;
+      font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px;
+      background: var(--card); color: var(--text);
+    }
+    .role-dropdown {
+      position: absolute; top: calc(100% + 4px); right: 0;
+      background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+      box-shadow: var(--shadow-lg); min-width: 140px; display: none; z-index: 50;
+    }
+    .role-dropdown.open { display: block; }
+    .role-dropdown div { padding: 8px 12px; cursor: pointer; font-size: 13px; }
+    .role-dropdown div:hover { background: var(--primary-soft); }
+    .role-wrap { position: relative; }
+
+    /* === Content === */
+    .content { flex: 1; overflow: auto; padding: 16px 20px 32px; }
+    .page-inner { max-width: 1440px; margin: 0 auto; }
+    .recent-users { display: flex; align-items: center; gap: 8px; padding: 8px 0 12px; flex-wrap: wrap; }
+    .recent-users .ru-label { font-size: 12px; color: var(--muted); }
+    .ru-chip {
+      display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px;
+      border: 1px solid var(--line); border-radius: 20px; cursor: pointer; font-size: 12px;
+      background: var(--card);
+    }
+    .ru-chip:hover { border-color: var(--primary); }
+    .ru-avatar {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), #0ea5e9);
+      color: #fff; font-size: 10px; display: grid; place-items: center;
+    }
+    .alert-banner {
+      display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+      background: var(--warn-soft); border: 1px solid #fbbf24; border-radius: var(--radius);
+      margin-bottom: 14px; font-size: 13px;
+    }
+    .alert-banner .ab-close { margin-left: auto; cursor: pointer; color: var(--muted); border: 0; background: none; }
+
+    /* === Components === */
+    .card {
+      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+      box-shadow: var(--shadow); margin-bottom: 14px;
+    }
+    .card-hd {
+      padding: 12px 16px; border-bottom: 1px solid var(--line);
+      font-weight: 600; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .card-bd { padding: 14px 16px; }
+    .kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 14px; }
+    .kpi-card {
+      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 14px 16px; box-shadow: var(--shadow);
+    }
+    .kpi-card .kpi-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .kpi-card .kpi-val { font-size: 22px; font-weight: 700; }
+    .kpi-card .kpi-trend { font-size: 11px; margin-top: 4px; }
+    .kpi-trend.up { color: var(--success); }
+    .kpi-trend.down { color: var(--danger); }
+    .chart-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+    .chart-box { height: 200px; position: relative; }
+    .chart-box canvas { width: 100% !important; height: 100% !important; }
+    .dist-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+    .dist-item { margin-bottom: 10px; }
+    .dist-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+    .dist-bar { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+    .dist-fill { height: 100%; border-radius: 4px; transition: width .3s; }
+    .split-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
+    .filters {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 14px;
+    }
+    .filters.collapsed .field.extra { display: none; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 12px; color: var(--text-2); }
+    .field input, .field select {
+      height: 34px; padding: 0 10px; border: 1px solid var(--line-strong);
+      border-radius: 8px; background: var(--card); color: var(--text); width: 100%;
+    }
+    .field input:focus, .field select:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
+    .filter-actions { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+    .btn {
+      height: 34px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--line-strong);
+      background: var(--card); cursor: pointer; color: var(--text); font-size: 13px;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn:hover { border-color: var(--primary); color: var(--primary); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-hover); color: #fff; }
+    .btn-ghost { border-color: transparent; background: transparent; }
+    .btn-sm { height: 28px; padding: 0 10px; font-size: 12px; }
+    .btn-link { border: 0; background: none; color: var(--primary); padding: 0 4px; height: auto; cursor: pointer; }
+    .btn-link:hover { text-decoration: underline; }
+    .batch-bar { display: flex; gap: 8px; flex-wrap: wrap; padding: 10px 0; align-items: center; }
+    .batch-bar .sel-info { font-size: 12px; color: var(--muted); margin-right: 8px; }
+    .table-wrap { overflow: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    th { background: var(--bg); font-weight: 600; color: var(--text-2); font-size: 12px; position: sticky; top: 0; }
+    tr:hover td { background: var(--primary-soft); }
+    tr.clickable { cursor: pointer; }
+    .tag {
+      display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;
+    }
+    .tag-success { background: var(--success-soft); color: var(--success); }
+    .tag-info { background: var(--info-soft); color: var(--info); }
+    .tag-warn { background: var(--warn-soft); color: var(--warn); }
+    .tag-danger { background: var(--danger-soft); color: var(--danger); }
+    .tag-purple { background: var(--purple-soft); color: var(--purple); }
+    .tag-muted { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+    .tag-group { display: flex; gap: 4px; flex-wrap: wrap; }
+    .priority-high { color: var(--danger); font-weight: 600; }
+    .priority-mid { color: var(--warn); }
+    .priority-low { color: var(--muted); }
+    .pagination { display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding: 12px 0 4px; }
+    .pagination button {
+      min-width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 6px;
+      background: var(--card); cursor: pointer; color: var(--text);
+    }
+    .pagination button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .pagination button:disabled { opacity: .4; cursor: not-allowed; }
+    .warn-card {
+      padding: 12px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px;
+      border-left: 3px solid var(--warn); background: var(--card);
+    }
+    .warn-card.severe { border-left-color: var(--danger); }
+    .warn-card .wc-title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+    .warn-card .wc-desc { font-size: 12px; color: var(--muted); }
+    .rule-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .rule-estimate {
+      padding: 16px; background: var(--primary-soft); border-radius: 8px; text-align: center;
+    }
+    .rule-estimate .re-num { font-size: 32px; font-weight: 700; color: var(--primary); }
+    .rule-estimate .re-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .progress-bar { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; margin: 8px 0; }
+    .progress-fill { height: 100%; background: var(--primary); border-radius: 4px; }
+    .timeline { position: relative; padding-left: 20px; }
+    .timeline::before {
+      content: ''; position: absolute; left: 6px; top: 4px; bottom: 4px;
+      width: 2px; background: var(--line);
+    }
+    .tl-item { position: relative; padding-bottom: 14px; }
+    .tl-item::before {
+      content: ''; position: absolute; left: -17px; top: 4px;
+      width: 8px; height: 8px; border-radius: 50%; background: var(--primary); border: 2px solid var(--card);
+    }
+    .tl-time { font-size: 11px; color: var(--muted); }
+    .tl-content { font-size: 13px; margin-top: 2px; }
+    .ai-card {
+      padding: 14px; border-radius: 8px; border: 1px solid var(--line);
+      background: linear-gradient(135deg, var(--purple-soft), var(--info-soft));
+      margin-bottom: 10px;
+    }
+    .ai-card .ai-title { font-weight: 600; font-size: 13px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .ai-card p { margin: 0; font-size: 13px; line-height: 1.6; color: var(--text-2); }
+    .profile-card { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+    .profile-item { padding: 10px; background: var(--bg); border-radius: 8px; }
+    .profile-item .pi-label { font-size: 11px; color: var(--muted); }
+    .profile-item .pi-val { font-size: 14px; font-weight: 600; margin-top: 2px; }
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+    .empty-state .es-icon { font-size: 36px; margin-bottom: 8px; opacity: .5; }
+    .skeleton { background: linear-gradient(90deg, var(--line) 25%, var(--bg) 50%, var(--line) 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; border-radius: 6px; height: 16px; margin-bottom: 8px; }
+    .skeleton.h40 { height: 40px; }
+    .skeleton.h200 { height: 200px; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    /* === Drawer === */
+    .drawer-mask {
+      position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 100;
+      opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .drawer-mask.open { opacity: 1; pointer-events: auto; }
+    .drawer {
+      position: fixed; top: 0; right: 0; bottom: 0; width: var(--drawer-w);
+      background: var(--card); box-shadow: var(--shadow-lg); z-index: 101;
+      transform: translateX(100%); transition: transform .25s;
+      display: flex; flex-direction: column;
+    }
+    .drawer.open { transform: translateX(0); }
+    .drawer.batch-drawer { --drawer-w: 560px; width: 560px; }
+    .drawer-hd {
+      padding: 14px 18px; border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .drawer-hd h3 { margin: 0; font-size: 16px; }
+    .drawer-close { border: 0; background: none; cursor: pointer; color: var(--muted); font-size: 20px; }
+    .drawer-tabs { display: flex; border-bottom: 1px solid var(--line); padding: 0 18px; overflow: auto; }
+    .drawer-tab {
+      padding: 10px 14px; cursor: pointer; font-size: 13px; color: var(--muted);
+      border-bottom: 2px solid transparent; white-space: nowrap;
+    }
+    .drawer-tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+    .drawer-bd { flex: 1; overflow: auto; padding: 16px 18px; }
+    .drawer-ft {
+      padding: 12px 18px; border-top: 1px solid var(--line);
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+
+    /* === Modal === */
+    .modal-mask {
+      position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 200;
+      display: none; place-items: center;
+    }
+    .modal-mask.open { display: grid; }
+    .modal {
+      background: var(--card); border-radius: var(--radius); width: 480px; max-width: 90vw;
+      box-shadow: var(--shadow-lg); overflow: hidden;
+    }
+    .modal-hd { padding: 14px 18px; border-bottom: 1px solid var(--line); font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+    .modal-bd { padding: 16px 18px; }
+    .modal-ft { padding: 12px 18px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 8px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 12px; color: var(--text-2); margin-bottom: 5px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 8px 10px; border: 1px solid var(--line-strong);
+      border-radius: 8px; background: var(--card); color: var(--text);
+    }
+    .form-group textarea { min-height: 80px; resize: vertical; }
+
+    /* === Toast === */
+    .toast-wrap { position: fixed; bottom: 20px; right: 20px; z-index: 300; display: flex; flex-direction: column; gap: 8px; }
+    .toast {
+      padding: 10px 16px; background: var(--card); border: 1px solid var(--line);
+      border-radius: 8px; box-shadow: var(--shadow-lg); font-size: 13px;
+      animation: toastIn .25s; min-width: 200px;
+    }
+    .toast.success { border-left: 3px solid var(--success); }
+    .toast.warn { border-left: 3px solid var(--warn); }
+    @keyframes toastIn { from { transform: translateX(20px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+    /* === Todo Panel === */
+    .todo-panel {
+      position: absolute; top: calc(100% + 6px); right: 0; width: 300px;
+      background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+      box-shadow: var(--shadow-lg); display: none; z-index: 50;
+    }
+    .todo-panel.open { display: block; }
+    .todo-panel .tp-hd { padding: 10px 14px; border-bottom: 1px solid var(--line); font-weight: 600; font-size: 13px; }
+    .todo-item { padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 12px; cursor: pointer; }
+    .todo-item:hover { background: var(--primary-soft); }
+    .todo-item .ti-time { color: var(--muted); font-size: 11px; margin-top: 2px; }
+
+  </style>
+</head>
+<body>
+<div id="app" class="app"></div>
+<div id="drawerRoot"></div>
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+<script>
+/* === Mock Data === */
+const MOCK = {
+  kpis: {
+    totalUsers: 128450, newBatches: 3, strategyMounted: 89200,
+    reachRate: 78.6, followRate: 64.2, pendingTransfer: 1240
+  },
+  kpis30: {
+    totalUsers: 135200, newBatches: 12, strategyMounted: 92100,
+    reachRate: 76.1, followRate: 61.8, pendingTransfer: 1580
+  },
+  trendDays: ['06-19','06-20','06-21','06-22','06-23','06-24','06-25'],
+  reachTrend: [12400, 13200, 11800, 14500, 15200, 13800, 16100],
+  convertTrend: [3.2, 3.5, 2.9, 4.1, 3.8, 4.0, 4.3],
+  teamVolume: { VIP: 45200, 平台: 38600, 市场: 31200 },
+  userTiers: [
+    { name: '高价值', pct: 18, color: '#01696f' },
+    { name: '中价值', pct: 32, color: '#2563eb' },
+    { name: '沉默', pct: 35, color: '#8c8c8c' },
+    { name: '风险流失', pct: 15, color: '#c2413c' }
+  ],
+  strategyTypes: [
+    { name: '平台策略', pct: 42, color: '#2563eb' },
+    { name: 'VIP策略', pct: 35, color: '#01696f' },
+    { name: '市场策略', pct: 23, color: '#7c3aed' }
+  ],
+  transferDest: [
+    { name: '留在本团队', pct: 58, color: '#0f766e' },
+    { name: '转VIP', pct: 15, color: '#01696f' },
+    { name: '转市场', pct: 18, color: '#7c3aed' },
+    { name: '转电销', pct: 9, color: '#b45309' }
+  ],
+  priorityUsers: [
+    { id:'U20250618001', tier:'高价值', strategy:'VIP专属召回-7日未活跃', reach:'Push未读', owner:'王芳', action:'人工电话跟进', priority:'高' },
+    { id:'U20250612088', tier:'风险流失', strategy:'平台Push-充值激励', reach:'短信成功', owner:'李明', action:'发起流转至市场', priority:'高' },
+    { id:'U20250615032', tier:'高价值', strategy:'无', reach:'—', owner:'王芳', action:'挂载VIP策略', priority:'高' },
+    { id:'U20250620017', tier:'沉默', strategy:'市场邮件-回流活动', reach:'邮件退信', owner:'张丽', action:'更换触达渠道', priority:'中' },
+    { id:'U20250608099', tier:'中价值', strategy:'VIP短信-生日关怀', reach:'电销未接通', owner:'陈浩', action:'预约二次外呼', priority:'中' }
+  ],
+  warnings: [
+    { title:'批次 BATCH-20250624-003 触达失败率过高', desc:'短信通道异常，失败率 32.4%，建议暂停并排查', severe:true },
+    { title:'市场运营组 24 小时未处理移交名单', desc:'待处理 86 人，来自 VIP 运营组移交', severe:true },
+    { title:'高价值用户无挂载策略', desc:'当前 128 名高价值用户尚未挂载任何策略', severe:false },
+    { title:'电销回流率低于阈值', desc:'近7日电销接通率仅 41%，低于团队均值', severe:false }
+  ],
+  batches: [
+    { id:'BATCH-20250625-001', name:'端午回流圈选', source:'大数据平台', count:12450, tags:['高价值','百家乐偏好','7日未活跃'], rule:'高价值+活跃<3天', strategies:3, owner:'王芳', status:'处理中', time:'2025-06-25 09:12' },
+    { id:'BATCH-20250624-003', name:'沉默用户唤醒', source:'大数据平台', count:45200, tags:['沉默','30日未充值'], rule:'沉默分层规则v2', strategies:2, owner:'李明', status:'待分配', time:'2025-06-24 16:30' },
+    { id:'BATCH-20250624-001', name:'VIP生日关怀', source:'策略平台', count:890, tags:['VIP','生日月'], rule:'VIP自动分层', strategies:1, owner:'王芳', status:'已完成', time:'2025-06-24 08:00' },
+    { id:'BATCH-20250623-002', name:'新注册7日培育', source:'大数据平台', count:3200, tags:['新用户','首充未完成'], rule:'新用户培育规则', strategies:2, owner:'张丽', status:'处理中', time:'2025-06-23 14:22' },
+    { id:'BATCH-20250622-001', name:'风险流失预警', source:'大数据平台', count:1560, tags:['风险流失','大额充值历史'], rule:'流失预警规则', strategies:1, owner:'陈浩', status:'待分层', time:'2025-06-22 11:05' },
+    { id:'BATCH-20250621-004', name:'市场活动报名', source:'市场系统', count:8900, tags:['活动参与','中价值'], rule:'—', strategies:0, owner:'—', status:'待分层', time:'2025-06-21 18:40' },
+    { id:'BATCH-20250620-002', name:'百家乐偏好用户', source:'大数据平台', count:6780, tags:['百家乐','高活跃'], rule:'游戏偏好分层', strategies:2, owner:'李明', status:'已完成', time:'2025-06-20 10:15' },
+    { id:'BATCH-20250619-001', name:'周年庆召回', source:'大数据平台', count:22100, tags:['沉默','历史高价值'], rule:'召回分层v3', strategies:3, owner:'王芳', status:'已完成', time:'2025-06-19 09:00' }
+  ],
+  users: [
+    { id:'U20250618001', name:'张伟', phone:'138****8821', tier:'高价值', team:'VIP运营组', owner:'王芳', strategy:'VIP专属召回-7日未活跃', reachCount:3, reachResult:'Push未读', lastFollow:'06-24 电话未接通', lastActive:'06-24', deposit:12800, transfer:'待流转', tags:['高价值','百家乐偏好','近7日活跃','疑似流失'] },
+    { id:'U20250612088', name:'李婷', phone:'159****3302', tier:'风险流失', team:'平台运营组', owner:'李明', strategy:'平台Push-充值激励', reachCount:5, reachResult:'短信成功', lastFollow:'06-23 已发送优惠券', lastActive:'06-20', deposit:3200, transfer:'—', tags:['风险流失','体育偏好','30日未充值'] },
+    { id:'U20250615032', name:'王磊', phone:'186****1190', tier:'高价值', team:'VIP运营组', owner:'王芳', strategy:'—', reachCount:0, reachResult:'—', lastFollow:'—', lastActive:'06-25', deposit:28500, transfer:'—', tags:['高价值','VIP','老虎机偏好'] },
+    { id:'U20250620017', name:'赵敏', phone:'137****5567', tier:'沉默', team:'市场运营组', owner:'张丽', strategy:'市场邮件-回流活动', reachCount:2, reachResult:'邮件退信', lastFollow:'06-22 更换邮箱', lastActive:'06-10', deposit:800, transfer:'—', tags:['沉默','邮件偏好'] },
+    { id:'U20250608099', name:'陈刚', phone:'135****7744', tier:'中价值', team:'VIP运营组', owner:'陈浩', strategy:'VIP短信-生日关怀', reachCount:4, reachResult:'电销未接通', lastFollow:'06-21 预约外呼', lastActive:'06-23', deposit:5600, transfer:'—', tags:['中价值','百家乐偏好'] },
+    { id:'U20250611045', name:'刘洋', phone:'188****2299', tier:'高价值', team:'VIP运营组', owner:'王芳', strategy:'VIP电销-专属优惠', reachCount:2, reachResult:'电销已接通', lastFollow:'06-25 意向充值', lastActive:'06-25', deposit:18200, transfer:'—', tags:['高价值','近7日活跃'] },
+    { id:'U20250614077', name:'周雪', phone:'136****6612', tier:'中价值', team:'平台运营组', owner:'李明', strategy:'平台Push-新游上线', reachCount:1, reachResult:'Push已读', lastFollow:'—', lastActive:'06-24', deposit:2100, transfer:'—', tags:['中价值','新游偏好'] },
+    { id:'U20250617023', name:'吴强', phone:'150****8833', tier:'沉默', team:'市场运营组', owner:'张丽', strategy:'市场短信-限时活动', reachCount:3, reachResult:'短信成功', lastFollow:'06-20 无响应', lastActive:'06-15', deposit:450, transfer:'待流转', tags:['沉默','活动敏感'] },
+    { id:'U20250619056', name:'郑华', phone:'139****4455', tier:'风险流失', team:'平台运营组', owner:'李明', strategy:'平台邮件-挽留', reachCount:6, reachResult:'邮件已读', lastFollow:'06-24 考虑中', lastActive:'06-18', deposit:9800, transfer:'流转中', tags:['风险流失','历史高价值'] },
+    { id:'U20250621089', name:'孙丽', phone:'158****7721', tier:'高价值', team:'VIP运营组', owner:'陈浩', strategy:'VIP Push-赛事推荐', reachCount:2, reachResult:'Push已读', lastFollow:'06-25 已参与赛事', lastActive:'06-25', deposit:15600, transfer:'—', tags:['高价值','体育偏好','近7日活跃'] }
+  ],
+  searchIndex: [
+    { type:'user', id:'U20250618001', label:'张伟 (U20250618001)' },
+    { type:'user', id:'U20250612088', label:'李婷 (U20250612088)' },
+    { type:'batch', id:'BATCH-20250625-001', label:'端午回流圈选' },
+    { type:'strategy', id:'s1', label:'VIP专属召回-7日未活跃' },
+    { type:'strategy', id:'s2', label:'平台Push-充值激励' }
+  ],
+  todos: [
+    { text:'审批批次 BATCH-20250624-003 分层规则', time:'2小时前' },
+    { text:'跟进用户 U20250618001 电话回访', time:'今天 10:00' },
+    { text:'处理市场组移交名单 86 人', time:'昨天' },
+    { text:'确认策略 VIP专属召回 执行结果', time:'06-24' },
+    { text:'导出周年庆召回批次报表', time:'06-23' }
+  ],
+  recentUsers: ['U20250618001','U20250612088','U20250611045']
+};
+
+const PAGES = {
+  dashboard: { title:'效果看板', bc:['运营CRM','效果看板'] },
+  batch: { title:'名单管理', bc:['运营CRM','名单管理'] },
+  users: { title:'用户列表', bc:['运营CRM','用户列表'] }
+};
+
+const NAV = [
+  { id:'dashboard', label:'效果看板', icon:'chart' },
+  { id:'batch', label:'名单管理', icon:'list' },
+  { id:'users', label:'用户列表', icon:'users' },
+  { id:'strategy', label:'策略中心', disabled:true },
+  { id:'transfer', label:'团队流转记录', disabled:true },
+  { id:'settings', label:'系统设置', disabled:true }
+];
+
+/* === State === */
+const state = {
+  theme: localStorage.getItem('crm-theme') || 'light',
+  page: 'dashboard',
+  dateRange: 7,
+  role: 'VIP运营组',
+  loading: false,
+  alertVisible: true,
+  searchOpen: false,
+  searchQuery: '',
+  todoOpen: false,
+  roleOpen: false,
+  filtersExpanded: false,
+  batchFilters: {},
+  userFilters: {},
+  selectedBatchIds: [],
+  selectedUserIds: [],
+  batchPage: 1,
+  userPage: 1,
+  pageSize: 10,
+  drawer: null,
+  drawerTab: 'profile',
+  batchDrawerTab: 'info',
+  modal: null,
+  ruleForm: { deposit: 500, activeDays: 3, game: '百家乐', vip: 'yes' }
+};
+
+/* === Utils === */
+function $(s, r) { return (r || document).querySelector(s); }
+function $$(s, r) { return [...(r || document).querySelectorAll(s)]; }
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function tagClass(status) {
+  const m = { '处理中':'tag-info','待分配':'tag-warn','待分层':'tag-muted','已完成':'tag-success',
+    '短信成功':'tag-success','Push未读':'tag-warn','Push已读':'tag-info','电销未接通':'tag-danger',
+    '电销已接通':'tag-success','邮件退信':'tag-danger','邮件已读':'tag-info','待流转':'tag-purple',
+    '流转中':'tag-purple','高价值':'tag-success','中价值':'tag-info','沉默':'tag-muted','风险流失':'tag-danger' };
+  return m[status] || 'tag-muted';
+}
+function showToast(msg, type) {
+  const wrap = $('#toastRoot');
+  wrap.innerHTML = '<div class="toast-wrap"></div>';
+  const t = document.createElement('div');
+  t.className = 'toast ' + (type || 'success');
+  t.textContent = msg;
+  wrap.firstChild.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+function getKpis() { return state.dateRange === 7 ? MOCK.kpis : MOCK.kpis30; }
+function getUser(id) { return MOCK.users.find(u => u.id === id); }
+function getBatch(id) { return MOCK.batches.find(b => b.id === id); }
+
+/* === Charts === */
+function drawLineChart(canvasId, labels, data, color) {
+  const c = document.getElementById(canvasId);
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = c.parentElement.getBoundingClientRect();
+  c.width = rect.width * dpr; c.height = rect.height * dpr;
+  c.style.width = rect.width + 'px'; c.style.height = rect.height + 'px';
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+  const pad = { t: 20, r: 16, b: 28, l: 40 };
+  const max = Math.max(...data) * 1.1;
+  const min = Math.min(...data) * 0.9;
+  ctx.clearRect(0, 0, W, H);
+  ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--line').trim();
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (H - pad.t - pad.b) * i / 4;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+  ctx.beginPath();
+  data.forEach((v, i) => {
+    const x = pad.l + (W - pad.l - pad.r) * i / (data.length - 1);
+    const y = pad.t + (H - pad.t - pad.b) * (1 - (v - min) / (max - min));
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = color || '#01696f';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = color || '#01696f';
+  data.forEach((v, i) => {
+    const x = pad.l + (W - pad.l - pad.r) * i / (data.length - 1);
+    const y = pad.t + (H - pad.t - pad.b) * (1 - (v - min) / (max - min));
+    ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+  });
+  ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--muted').trim();
+  ctx.font = '10px sans-serif';
+  ctx.textAlign = 'center';
+  labels.forEach((l, i) => {
+    const x = pad.l + (W - pad.l - pad.r) * i / (labels.length - 1);
+    ctx.fillText(l, x, H - 8);
+  });
+}
+
+function drawBarChart(canvasId, labels, data, colors) {
+  const c = document.getElementById(canvasId);
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = c.parentElement.getBoundingClientRect();
+  c.width = rect.width * dpr; c.height = rect.height * dpr;
+  c.style.width = rect.width + 'px'; c.style.height = rect.height + 'px';
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+  const pad = { t: 20, r: 16, b: 36, l: 40 };
+  const max = Math.max(...data) * 1.15;
+  ctx.clearRect(0, 0, W, H);
+  const bw = (W - pad.l - pad.r) / data.length * 0.6;
+  const gap = (W - pad.l - pad.r) / data.length;
+  data.forEach((v, i) => {
+    const x = pad.l + gap * i + gap * 0.2;
+    const h = (H - pad.t - pad.b) * v / max;
+    const y = H - pad.b - h;
+    ctx.fillStyle = colors[i] || '#01696f';
+    ctx.fillRect(x, y, bw, h);
+    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--muted').trim();
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(labels[i], x + bw / 2, H - 10);
+    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text').trim();
+    ctx.fillText(v >= 1000 ? (v/1000).toFixed(1)+'k' : v, x + bw / 2, y - 4);
+  });
+}
+
+function renderDistItems(items) {
+  return items.map(it => `
+    <div class="dist-item">
+      <div class="dist-label"><span>${esc(it.name)}</span><span>${it.pct}%</span></div>
+      <div class="dist-bar"><div class="dist-fill" style="width:${it.pct}%;background:${it.color}"></div></div>
+    </div>`).join('');
+}
+
+/* === Page Renderers === */
+function renderDashboard() {
+  const k = getKpis();
+  const alertHtml = state.alertVisible ? `
+    <div class="alert-banner" id="alertBanner">
+      <span>⚠</span>
+      <span><strong>异常用户提醒：</strong>当前有 128 名高价值用户未挂载策略，23 个批次触达失败率超阈值，请优先处理。</span>
+      <button class="ab-close" data-action="close-alert">✕</button>
+    </div>` : '';
+  const recentHtml = MOCK.recentUsers.map(uid => {
+    const u = getUser(uid);
+    return u ? `<div class="ru-chip" data-action="open-user" data-id="${u.id}"><div class="ru-avatar">${u.name[0]}</div>${esc(u.name)}</div>` : '';
+  }).join('');
+  return `
+    ${alertHtml}
+    <div class="recent-users"><span class="ru-label">最近访问：</span>${recentHtml}</div>
+    <div class="kpi-row">
+      ${[
+        ['总用户数', k.totalUsers.toLocaleString(), '+2.3%', 'up'],
+        ['今日新增批次', k.newBatches, '+1', 'up'],
+        ['已挂载策略人数', k.strategyMounted.toLocaleString(), '+4.1%', 'up'],
+        ['触达成功率', k.reachRate+'%', '-0.8%', 'down'],
+        ['人工跟进完成率', k.followRate+'%', '+1.2%', 'up'],
+        ['待流转人数', k.pendingTransfer.toLocaleString(), '+12', 'down']
+      ].map(([l,v,t,dir]) => `<div class="kpi-card"><div class="kpi-label">${l}</div><div class="kpi-val">${v}</div><div class="kpi-trend ${dir}">${dir==='up'?'↑':'↓'} ${t} 较上期</div></div>`).join('')}
+    </div>
+    <div class="chart-row">
+      <div class="card"><div class="card-hd">近7天触达量趋势</div><div class="card-bd"><div class="chart-box"><canvas id="chartReach"></canvas></div></div></div>
+      <div class="card"><div class="card-hd">近7天转化率趋势 (%)</div><div class="card-bd"><div class="chart-box"><canvas id="chartConvert"></canvas></div></div></div>
+      <div class="card"><div class="card-hd">各团队处理量对比</div><div class="card-bd"><div class="chart-box"><canvas id="chartTeam"></canvas></div></div></div>
+    </div>
+    <div class="dist-row">
+      <div class="card"><div class="card-hd">用户层级分布</div><div class="card-bd">${renderDistItems(MOCK.userTiers)}</div></div>
+      <div class="card"><div class="card-hd">策略类型分布</div><div class="card-bd">${renderDistItems(MOCK.strategyTypes)}</div></div>
+      <div class="card"><div class="card-hd">流转去向分布</div><div class="card-bd">${renderDistItems(MOCK.transferDest)}</div></div>
+    </div>
+    <div class="split-row">
+      <div class="card">
+        <div class="card-hd">待重点处理用户</div>
+        <div class="card-bd table-wrap">
+          <table>
+            <thead><tr><th>用户ID</th><th>分层标签</th><th>当前策略</th><th>最近触达</th><th>负责人</th><th>建议动作</th><th>优先级</th><th>操作</th></tr></thead>
+            <tbody>${MOCK.priorityUsers.map(p => `
+              <tr class="clickable" data-action="open-user" data-id="${p.id}">
+                <td>${esc(p.id)}</td><td><span class="tag ${tagClass(p.tier)}">${esc(p.tier)}</span></td>
+                <td>${esc(p.strategy)}</td><td><span class="tag ${tagClass(p.reach)}">${esc(p.reach)}</span></td>
+                <td>${esc(p.owner)}</td><td>${esc(p.action)}</td>
+                <td class="priority-${p.priority==='高'?'high':p.priority==='中'?'mid':'low'}">${p.priority}</td>
+                <td><button class="btn-link" data-action="open-user" data-id="${p.id}">查看详情</button></td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd">运营提醒 / 异常预警</div>
+        <div class="card-bd">${MOCK.warnings.map(w => `
+          <div class="warn-card ${w.severe?'severe':''}">
+            <div class="wc-title">${esc(w.title)}</div>
+            <div class="wc-desc">${esc(w.desc)}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+function filterBatches() {
+  let list = [...MOCK.batches];
+  const f = state.batchFilters;
+  if (f.id) list = list.filter(b => b.id.includes(f.id));
+  if (f.name) list = list.filter(b => b.name.includes(f.name));
+  if (f.status) list = list.filter(b => b.status === f.status);
+  if (f.owner) list = list.filter(b => b.owner.includes(f.owner));
+  return list;
+}
+
+function renderBatchPage() {
+  const list = filterBatches();
+  const start = (state.batchPage - 1) * state.pageSize;
+  const pageList = list.slice(start, start + state.pageSize);
+  const totalPages = Math.max(1, Math.ceil(list.length / state.pageSize));
+  const est = Math.round(12450 * (state.ruleForm.deposit / 500) * (state.ruleForm.activeDays / 3) * (state.ruleForm.vip === 'yes' ? 0.6 : 1));
+  return `
+    <div class="card">
+      <div class="card-hd">筛选条件
+        <button class="btn btn-sm btn-ghost" data-action="toggle-filters">${state.filtersExpanded ? '收起' : '展开更多'}</button>
+      </div>
+      <div class="card-bd">
+        <div class="filters ${state.filtersExpanded ? '' : 'collapsed'}">
+          <div class="field"><label>批次ID</label><input data-filter="batch" name="id" value="${esc(state.batchFilters.id||'')}" placeholder="BATCH-..." /></div>
+          <div class="field"><label>批次名称</label><input data-filter="batch" name="name" value="${esc(state.batchFilters.name||'')}" /></div>
+          <div class="field"><label>来源平台</label><select data-filter="batch" name="source"><option value="">全部</option><option>大数据平台</option><option>策略平台</option><option>市场系统</option></select></div>
+          <div class="field"><label>导入时间</label><input type="date" data-filter="batch" name="time" /></div>
+          <div class="field"><label>用户量范围</label><input placeholder="最小" style="width:48%;display:inline-block" /> — <input placeholder="最大" style="width:48%;display:inline-block" /></div>
+          <div class="field"><label>当前状态</label><select data-filter="batch" name="status"><option value="">全部</option><option>待分层</option><option>待分配</option><option>处理中</option><option>已完成</option></select></div>
+          <div class="field"><label>负责人</label><input data-filter="batch" name="owner" value="${esc(state.batchFilters.owner||'')}" /></div>
+          <div class="field extra"><label>标签关键词</label><input placeholder="高价值、沉默..." /></div>
+          <div class="field extra"><label>是否已挂策略</label><select><option value="">全部</option><option>是</option><option>否</option></select></div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn btn-primary" data-action="search-batch">查询</button>
+          <button class="btn" data-action="reset-batch">重置</button>
+        </div>
+      </div>
+    </div>
+    <div class="batch-bar">
+      <span class="sel-info">已选 ${state.selectedBatchIds.length} 项</span>
+      <button class="btn btn-sm" data-action="batch-op" data-op="分层" ${state.selectedBatchIds.length?'':'disabled'}>批量分层</button>
+      <button class="btn btn-sm" data-action="batch-op" data-op="分配" ${state.selectedBatchIds.length?'':'disabled'}>批量分配运营</button>
+      <button class="btn btn-sm" data-action="batch-op" data-op="挂策略" ${state.selectedBatchIds.length?'':'disabled'}>批量挂载策略</button>
+      <button class="btn btn-sm" data-action="export">导出名单</button>
+      <button class="btn btn-sm btn-primary" data-action="create-rule">创建规则任务</button>
+    </div>
+    <div class="card">
+      <div class="card-bd table-wrap">
+        ${list.length ? `<table>
+          <thead><tr><th><input type="checkbox" data-action="select-all-batch" ${state.selectedBatchIds.length===pageList.length&&pageList.length?'checked':''} /></th>
+            <th>批次ID</th><th>批次名称</th><th>来源</th><th>用户数</th><th>标签概览</th><th>分层规则</th><th>已挂策略</th><th>负责人</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
+          <tbody>${pageList.map(b => `
+            <tr class="clickable" data-action="open-batch" data-id="${b.id}">
+              <td><input type="checkbox" data-action="select-batch" data-id="${b.id}" ${state.selectedBatchIds.includes(b.id)?'checked':''} onclick="event.stopPropagation()" /></td>
+              <td>${esc(b.id)}</td><td>${esc(b.name)}</td><td>${esc(b.source)}</td>
+              <td>${b.count.toLocaleString()}</td>
+              <td><div class="tag-group">${b.tags.map(t=>`<span class="tag tag-muted">${esc(t)}</span>`).join('')}</div></td>
+              <td>${esc(b.rule)}</td><td>${b.strategies}</td><td>${esc(b.owner)}</td>
+              <td><span class="tag ${tagClass(b.status)}">${esc(b.status)}</span></td>
+              <td>${esc(b.time)}</td>
+              <td>
+                <button class="btn-link" data-action="open-batch" data-id="${b.id}">查看</button>
+                <button class="btn-link" data-action="toast" data-msg="已打开分层向导">分层</button>
+                <button class="btn-link" data-action="toast" data-msg="已打开分配面板">分配</button>
+                <button class="btn-link" data-action="open-modal" data-modal="strategy">挂策略</button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        <div class="pagination">
+          <button data-action="batch-page" data-p="${state.batchPage-1}" ${state.batchPage<=1?'disabled':''}>‹</button>
+          ${Array.from({length:totalPages},(_,i)=>`<button class="${i+1===state.batchPage?'active':''}" data-action="batch-page" data-p="${i+1}">${i+1}</button>`).join('')}
+          <button data-action="batch-page" data-p="${state.batchPage+1}" ${state.batchPage>=totalPages?'disabled':''}>›</button>
+        </div>` : '<div class="empty-state"><div class="es-icon">📭</div><div>暂无匹配批次</div></div>'}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd">规则分层预览</div>
+      <div class="card-bd rule-preview">
+        <div>
+          <div class="field"><label>近7日充值 ≥ (元)</label><input type="number" data-rule="deposit" value="${state.ruleForm.deposit}" /></div>
+          <div class="field"><label>活跃天数 ≤</label><input type="number" data-rule="activeDays" value="${state.ruleForm.activeDays}" /></div>
+          <div class="field"><label>游戏偏好</label><select data-rule="game"><option ${state.ruleForm.game==='百家乐'?'selected':''}>百家乐</option><option>体育</option><option>老虎机</option></select></div>
+          <div class="field"><label>是否VIP</label><select data-rule="vip"><option value="yes" ${state.ruleForm.vip==='yes'?'selected':''}>是</option><option value="no">否</option></select></div>
+          <button class="btn btn-primary" data-action="save-rule">保存为分层规则</button>
+        </div>
+        <div>
+          <div class="rule-estimate"><div class="re-num" id="ruleEstimate">${est.toLocaleString()}</div><div class="re-label">预估命中人数</div></div>
+          <div style="margin-top:14px">${renderDistItems([
+            {name:'高价值',pct:42,color:'#01696f'},{name:'中价值',pct:31,color:'#2563eb'},
+            {name:'沉默',pct:18,color:'#8c8c8c'},{name:'风险流失',pct:9,color:'#c2413c'}
+          ])}</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function filterUsers() {
+  let list = [...MOCK.users];
+  const f = state.userFilters;
+  if (f.keyword) {
+    const kw = f.keyword.toLowerCase();
+    list = list.filter(u => u.id.toLowerCase().includes(kw) || u.name.includes(kw) || u.phone.includes(kw));
+  }
+  if (f.tier) list = list.filter(u => u.tier === f.tier);
+  if (f.team) list = list.filter(u => u.team === f.team);
+  if (f.transfer) list = list.filter(u => u.transfer === f.transfer);
+  return list;
+}
+
+function renderUsersPage() {
+  const list = filterUsers();
+  const start = (state.userPage - 1) * state.pageSize;
+  const pageList = list.slice(start, start + state.pageSize);
+  const totalPages = Math.max(1, Math.ceil(list.length / state.pageSize));
+  return `
+    <div class="card">
+      <div class="card-hd">筛选条件
+        <button class="btn btn-sm btn-ghost" data-action="toggle-filters">${state.filtersExpanded ? '收起' : '展开更多'}</button>
+      </div>
+      <div class="card-bd">
+        <div class="filters ${state.filtersExpanded ? '' : 'collapsed'}">
+          <div class="field"><label>用户ID / 昵称 / 手机号</label><input data-filter="user" name="keyword" value="${esc(state.userFilters.keyword||'')}" placeholder="搜索..." /></div>
+          <div class="field"><label>用户分层</label><select data-filter="user" name="tier"><option value="">全部</option><option>高价值</option><option>中价值</option><option>沉默</option><option>风险流失</option></select></div>
+          <div class="field"><label>归属团队</label><select data-filter="user" name="team"><option value="">全部</option><option>VIP运营组</option><option>平台运营组</option><option>市场运营组</option></select></div>
+          <div class="field"><label>当前负责人</label><input placeholder="负责人姓名" /></div>
+          <div class="field"><label>策略类型</label><select><option value="">全部</option><option>平台</option><option>VIP</option><option>市场</option></select></div>
+          <div class="field"><label>最近触达状态</label><select><option value="">全部</option><option>成功</option><option>失败</option><option>未触达</option></select></div>
+          <div class="field"><label>是否待流转</label><select data-filter="user" name="transfer"><option value="">全部</option><option>待流转</option><option>流转中</option></select></div>
+          <div class="field extra"><label>最近活跃时间</label><input type="date" /></div>
+          <div class="field extra"><label>充值区间 (元)</label><input placeholder="最小 — 最大" /></div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn btn-primary" data-action="search-user">查询</button>
+          <button class="btn" data-action="reset-user">重置</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-bd table-wrap">
+        ${list.length ? `<table>
+          <thead><tr><th><input type="checkbox" data-action="select-all-user" /></th>
+            <th>用户ID</th><th>昵称</th><th>分层</th><th>归属团队</th><th>负责人</th><th>当前策略</th>
+            <th>近7日触达</th><th>最近触达结果</th><th>最近人工跟进</th><th>最近活跃</th><th>近30日充值</th><th>流转状态</th><th>操作</th></tr></thead>
+          <tbody>${pageList.map(u => `
+            <tr class="clickable" data-action="open-user" data-id="${u.id}">
+              <td><input type="checkbox" data-action="select-user" data-id="${u.id}" onclick="event.stopPropagation()" /></td>
+              <td>${esc(u.id)}</td><td>${esc(u.name)}</td>
+              <td><span class="tag ${tagClass(u.tier)}">${esc(u.tier)}</span></td>
+              <td>${esc(u.team)}</td><td>${esc(u.owner)}</td><td>${esc(u.strategy)}</td>
+              <td>${u.reachCount}次</td>
+              <td><span class="tag ${tagClass(u.reachResult)}">${esc(u.reachResult)}</span></td>
+              <td>${esc(u.lastFollow)}</td><td>${esc(u.lastActive)}</td>
+              <td>¥${u.deposit.toLocaleString()}</td>
+              <td><span class="tag ${tagClass(u.transfer)}">${esc(u.transfer)}</span></td>
+              <td><button class="btn-link" data-action="open-user" data-id="${u.id}">查看详情</button></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        <div class="pagination">
+          <button data-action="user-page" data-p="${state.userPage-1}" ${state.userPage<=1?'disabled':''}>‹</button>
+          ${Array.from({length:totalPages},(_,i)=>`<button class="${i+1===state.userPage?'active':''}" data-action="user-page" data-p="${i+1}">${i+1}</button>`).join('')}
+          <button data-action="user-page" data-p="${state.userPage+1}" ${state.userPage>=totalPages?'disabled':''}>›</button>
+        </div>` : '<div class="empty-state"><div class="es-icon">📭</div><div>暂无匹配用户</div></div>'}
+      </div>
+    </div>`;
+}
+
+function renderUserDrawerContent(u) {
+  const tabs = [
+    { id:'profile', label:'基本画像' }, { id:'strategy', label:'策略记录' },
+    { id:'reach', label:'触达记录' }, { id:'follow', label:'人工跟进' },
+    { id:'transfer', label:'团队流转' }, { id:'ai', label:'AI建议' }
+  ];
+  let tabContent = '';
+  if (state.drawerTab === 'profile') {
+    tabContent = `
+      <div class="profile-card">
+        <div class="profile-item"><div class="pi-label">用户ID</div><div class="pi-val">${esc(u.id)}</div></div>
+        <div class="profile-item"><div class="pi-label">昵称</div><div class="pi-val">${esc(u.name)}</div></div>
+        <div class="profile-item"><div class="pi-label">手机号</div><div class="pi-val">${esc(u.phone)}</div></div>
+        <div class="profile-item"><div class="pi-label">归属团队</div><div class="pi-val">${esc(u.team)}</div></div>
+        <div class="profile-item"><div class="pi-label">负责人</div><div class="pi-val">${esc(u.owner)}</div></div>
+        <div class="profile-item"><div class="pi-label">近30日充值</div><div class="pi-val">¥${u.deposit.toLocaleString()}</div></div>
+      </div>
+      <div class="card" style="margin-bottom:12px"><div class="card-hd">标签画像</div><div class="card-bd"><div class="tag-group">${u.tags.map(t=>`<span class="tag ${tagClass(t.includes('高价值')?'高价值':t.includes('流失')?'风险流失':'tag-muted')}">${esc(t)}</span>`).join('')}</div></div></div>
+      <div class="card"><div class="card-hd">当前挂载策略</div><div class="card-bd">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span>${esc(u.strategy)}</span>
+          <span class="tag tag-info">执行中</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:65%"></div></div>
+        <div style="font-size:12px;color:var(--muted)">触达进度 65% · 已触达 ${u.reachCount} 次</div>
+      </div></div>`;
+  } else if (state.drawerTab === 'strategy') {
+    tabContent = `
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-time">2025-06-18 — 至今</div><div class="tl-content"><strong>${esc(u.strategy)}</strong> · VIP策略 · 执行中</div></div>
+        <div class="tl-item"><div class="tl-time">2025-06-01 — 2025-06-17</div><div class="tl-content"><strong>平台Push-新游推荐</strong> · 平台策略 · 已结束</div></div>
+        <div class="tl-item"><div class="tl-time">2025-05-15 — 2025-05-31</div><div class="tl-content"><strong>市场邮件-会员日</strong> · 市场策略 · 已结束</div></div>
+      </div>`;
+  } else if (state.drawerTab === 'reach') {
+    tabContent = `
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-time">06-24 14:30 · Push</div><div class="tl-content">VIP专属召回推送 · <span class="tag tag-warn">未读</span></div></div>
+        <div class="tl-item"><div class="tl-time">06-22 10:15 · 短信</div><div class="tl-content">充值激励短信 · <span class="tag tag-success">发送成功</span></div></div>
+        <div class="tl-item"><div class="tl-time">06-20 16:00 · 电销</div><div class="tl-content">外呼跟进 · <span class="tag tag-danger">未接通</span></div></div>
+        <div class="tl-item"><div class="tl-time">06-18 09:30 · 邮件</div><div class="tl-content">活动邀请邮件 · <span class="tag tag-info">已读</span></div></div>
+      </div>`;
+  } else if (state.drawerTab === 'follow') {
+    tabContent = `
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-time">06-24 · 电话跟进</div><div class="tl-content">拨打用户电话，未接通。下次计划：06-26 上午再次外呼。</div></div>
+        <div class="tl-item"><div class="tl-time">06-22 · 在线客服</div><div class="tl-content">用户咨询优惠活动，已发送专属优惠券。结果：待观察。</div></div>
+        <div class="tl-item"><div class="tl-time">06-20 · 备注</div><div class="tl-content">用户近7日有登录但无充值，标记为重点关注。</div></div>
+      </div>`;
+  } else if (state.drawerTab === 'transfer') {
+    tabContent = `
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-time">2025-06-15</div><div class="tl-content">平台运营组 → VIP运营组 · 原因：用户升级至高价值层级</div></div>
+        <div class="tl-item"><div class="tl-time">2025-05-20</div><div class="tl-content">市场运营组 → 平台运营组 · 原因：活动参与后无转化</div></div>
+      </div>`;
+  } else if (state.drawerTab === 'ai') {
+    tabContent = `
+      <div class="ai-card"><div class="ai-title">✦ 用户摘要</div><p>${esc(u.name)}是一位${esc(u.tier)}用户，偏好${u.tags.includes('百家乐偏好')?'百家乐':'综合'}类游戏，近30日充值 ¥${u.deposit.toLocaleString()}。近7日有登录行为但充值意愿下降，${u.reachResult==='Push未读'?'对Push触达响应率低':'触达响应一般'}，存在流失风险。</p></div>
+      <div class="ai-card"><div class="ai-title">✦ 建议策略</div><p>推荐挂载「VIP电销-专属优惠」策略，配合短信二次触达。根据同类用户历史数据，电销接通后7日充值转化率约 18.5%。</p></div>
+      <div class="ai-card"><div class="ai-title">✦ 建议下一动作</div><p>1. 今日内完成电话外呼跟进；2. 如未接通，明日 10:00 发送短信提醒；3. 若3日内仍无转化，建议发起流转至市场运营组。</p></div>`;
+  }
+  return `
+    <div class="drawer-hd"><h3>${esc(u.name)} · ${esc(u.id)}</h3><button class="drawer-close" data-action="close-drawer">✕</button></div>
+    <div class="drawer-tabs">${tabs.map(t=>`<div class="drawer-tab ${state.drawerTab===t.id?'active':''}" data-action="drawer-tab" data-tab="${t.id}">${t.label}</div>`).join('')}</div>
+    <div class="drawer-bd">${tabContent}</div>
+    <div class="drawer-ft">
+      <button class="btn btn-primary btn-sm" data-action="open-modal" data-modal="follow">新增跟进</button>
+      <button class="btn btn-sm" data-action="open-modal" data-modal="transfer">发起流转</button>
+      <button class="btn btn-sm" data-action="open-modal" data-modal="strategy">挂载策略</button>
+      <button class="btn btn-sm" data-action="toast" data-msg="触达指令已下发至触达中心">触达用户</button>
+      <button class="btn btn-sm" data-action="toast" data-msg="已标记为重点关注用户">标记重点关注</button>
+    </div>`;
+}
+
+function renderBatchDrawerContent(b) {
+  const tabs = [
+    { id:'info', label:'基本信息' }, { id:'tags', label:'标签统计' }, { id:'tier', label:'分层结果' },
+    { id:'strategy', label:'已绑定策略' }, { id:'progress', label:'执行进度' },
+    { id:'transfer', label:'流转记录' }, { id:'log', label:'操作日志' }
+  ];
+  let content = '';
+  if (state.batchDrawerTab === 'info') {
+    content = `<div class="profile-card">
+      <div class="profile-item"><div class="pi-label">批次ID</div><div class="pi-val">${esc(b.id)}</div></div>
+      <div class="profile-item"><div class="pi-label">批次名称</div><div class="pi-val">${esc(b.name)}</div></div>
+      <div class="profile-item"><div class="pi-label">来源</div><div class="pi-val">${esc(b.source)}</div></div>
+      <div class="profile-item"><div class="pi-label">用户数</div><div class="pi-val">${b.count.toLocaleString()}</div></div>
+      <div class="profile-item"><div class="pi-label">负责人</div><div class="pi-val">${esc(b.owner)}</div></div>
+      <div class="profile-item"><div class="pi-label">状态</div><div class="pi-val"><span class="tag ${tagClass(b.status)}">${esc(b.status)}</span></div></div>
+    </div>`;
+  } else if (state.batchDrawerTab === 'tags') {
+    content = renderDistItems([
+      {name:'高价值',pct:22,color:'#01696f'},{name:'中价值',pct:35,color:'#2563eb'},
+      {name:'沉默',pct:30,color:'#8c8c8c'},{name:'风险流失',pct:13,color:'#c2413c'}
+    ]);
+  } else if (state.batchDrawerTab === 'tier') {
+    content = `<p>当前规则：<strong>${esc(b.rule)}</strong></p>${renderDistItems(MOCK.userTiers)}`;
+  } else if (state.batchDrawerTab === 'strategy') {
+    content = `<div class="timeline">
+      <div class="tl-item"><div class="tl-content"><strong>VIP专属召回-7日未活跃</strong> · 已绑定 5,200 人</div></div>
+      <div class="tl-item"><div class="tl-content"><strong>平台Push-充值激励</strong> · 已绑定 4,800 人</div></div>
+      <div class="tl-item"><div class="tl-content"><strong>市场邮件-回流活动</strong> · 已绑定 2,450 人</div></div>
+    </div>`;
+  } else if (state.batchDrawerTab === 'progress') {
+    content = `<div>触达进度</div><div class="progress-bar"><div class="progress-fill" style="width:72%"></div></div><div style="font-size:12px;color:var(--muted);margin-bottom:14px">72% 已完成 · 8,964 / ${b.count.toLocaleString()}</div>
+      <div>策略挂载进度</div><div class="progress-bar"><div class="progress-fill" style="width:88%"></div></div><div style="font-size:12px;color:var(--muted)">88% 已挂载</div>`;
+  } else if (state.batchDrawerTab === 'transfer') {
+    content = `<div class="timeline"><div class="tl-item"><div class="tl-time">06-24</div><div class="tl-content">128 人流转至市场运营组 · 原因：7日无转化</div></div></div>`;
+  } else {
+    content = `<div class="timeline">
+      <div class="tl-item"><div class="tl-time">06-25 09:12</div><div class="tl-content">系统导入批次，来源：${esc(b.source)}</div></div>
+      <div class="tl-item"><div class="tl-time">06-25 09:30</div><div class="tl-content">${esc(b.owner)} 执行自动分层</div></div>
+      <div class="tl-item"><div class="tl-time">06-25 10:15</div><div class="tl-content">挂载 3 个策略，开始执行</div></div>
+    </div>`;
+  }
+  return `
+    <div class="drawer-hd"><h3>${esc(b.name)}</h3><button class="drawer-close" data-action="close-drawer">✕</button></div>
+    <div class="drawer-tabs">${tabs.map(t=>`<div class="drawer-tab ${state.batchDrawerTab===t.id?'active':''}" data-action="batch-drawer-tab" data-tab="${t.id}">${t.label}</div>`).join('')}</div>
+    <div class="drawer-bd">${content}</div>
+    <div class="drawer-ft">
+      <button class="btn btn-sm" data-action="toast" data-msg="已打开分层向导">执行分层</button>
+      <button class="btn btn-sm" data-action="open-modal" data-modal="strategy">挂载策略</button>
+      <button class="btn btn-sm btn-primary" data-action="toast" data-msg="批次导出任务已创建">导出名单</button>
+    </div>`;
+}
+
+/* === Shell & Overlays === */
+function renderSearchPanel() {
+  const q = state.searchQuery.toLowerCase();
+  const items = q ? MOCK.searchIndex.filter(s => s.label.toLowerCase().includes(q) || s.id.toLowerCase().includes(q)) : MOCK.searchIndex;
+  if (!items.length) return '<div class="sp-title">无匹配结果</div>';
+  const groups = { user:'用户', batch:'批次', strategy:'策略' };
+  let html = '';
+  ['user','batch','strategy'].forEach(type => {
+    const g = items.filter(i => i.type === type);
+    if (g.length) {
+      html += `<div class="sp-title">${groups[type]}</div>`;
+      html += g.map(i => `<div class="sp-item" data-action="search-select" data-type="${i.type}" data-id="${i.id}">${esc(i.label)}</div>`).join('');
+    }
+  });
+  return html;
+}
+
+function renderModal() {
+  if (!state.modal) return '';
+  const titles = { transfer:'发起流转', strategy:'挂载策略', follow:'新增跟进' };
+  let body = '';
+  if (state.modal === 'transfer') {
+    body = `<div class="form-group"><label>目标团队</label><select><option>VIP运营组</option><option>平台运营组</option><option>市场运营组</option><option>电销团队</option></select></div>
+      <div class="form-group"><label>流转原因</label><select><option>7日无转化</option><option>触达多次失败</option><option>用户层级变更</option><option>其他</option></select></div>
+      <div class="form-group"><label>备注</label><textarea placeholder="补充说明..."></textarea></div>`;
+  } else if (state.modal === 'strategy') {
+    body = `<div class="form-group"><label>策略类型</label><select><option>VIP策略</option><option>平台策略</option><option>市场策略</option></select></div>
+      <div class="form-group"><label>选择策略</label><select><option>VIP专属召回-7日未活跃</option><option>平台Push-充值激励</option><option>市场邮件-回流活动</option><option>VIP电销-专属优惠</option></select></div>
+      <div class="form-group"><label>执行时间</label><input type="datetime-local" value="2025-06-25T10:00" /></div>`;
+  } else {
+    body = `<div class="form-group"><label>跟进方式</label><select><option>电话</option><option>在线客服</option><option>外呼</option><option>备注</option></select></div>
+      <div class="form-group"><label>跟进内容</label><textarea placeholder="记录跟进详情..."></textarea></div>
+      <div class="form-group"><label>跟进结果</label><select><option>待观察</option><option>有意向</option><option>无响应</option><option>已转化</option></select></div>
+      <div class="form-group"><label>下次计划时间</label><input type="datetime-local" /></div>`;
+  }
+  return `<div class="modal-mask open" data-action="close-modal-bg">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-hd">${titles[state.modal]}<button class="drawer-close" data-action="close-modal">✕</button></div>
+      <div class="modal-bd">${body}</div>
+      <div class="modal-ft">
+        <button class="btn" data-action="close-modal">取消</button>
+        <button class="btn btn-primary" data-action="confirm-modal">确认</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderDrawer() {
+  if (!state.drawer) return '';
+  let inner = '';
+  if (state.drawer.type === 'user') {
+    const u = getUser(state.drawer.id);
+    if (u) inner = renderUserDrawerContent(u);
+  } else if (state.drawer.type === 'batch') {
+    const b = getBatch(state.drawer.id);
+    if (b) inner = renderBatchDrawerContent(b);
+  }
+  return `<div class="drawer-mask open" data-action="close-drawer-bg"></div>
+    <div class="drawer open ${state.drawer.type==='batch'?'batch-drawer':''}">${inner}</div>`;
+}
+
+function iconSvg(name) {
+  const icons = {
+    chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 5 5-9"/></svg>',
+    list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>',
+    users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><path d="M16 3.13a4 4 0 010 7.75"/><path d="M21 21v-2a4 4 0 00-3-3.85"/></svg>'
+  };
+  return icons[name] || '';
+}
+
+function renderShell() {
+  const pg = PAGES[state.page];
+  const navHtml = NAV.map(n => `
+    <div class="nav-item ${state.page===n.id?'active':''} ${n.disabled?'disabled':''}"
+      data-action="${n.disabled?'disabled-nav':'nav'}" data-page="${n.id||''}">
+      ${n.icon ? iconSvg(n.icon) : ''}${esc(n.label)}
+    </div>`).join('');
+
+  const content = state.loading
+    ? '<div class="page-inner"><div class="skeleton h40"></div><div class="skeleton h200"></div><div class="skeleton h200"></div></div>'
+    : `<div class="page-inner">${state.page==='dashboard'?renderDashboard():state.page==='batch'?renderBatchPage():renderUsersPage()}</div>`;
+
+  document.documentElement.setAttribute('data-theme', state.theme);
+  $('#app').innerHTML = `
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-title">运营 CRM</div><div class="brand-sub">用户承接与策略管理</div></div>
+      <div class="nav-group"><div class="nav-l1">主导航</div>${navHtml}</div>
+      <div class="sidebar-foot">v1.0 产品原型</div>
+    </aside>
+    <div class="main-wrap">
+      <header class="header">
+        <div class="header-left">
+          <div class="header-title">${esc(pg.title)}</div>
+          <div class="breadcrumb">${pg.bc.map((b,i)=>i?'<span>/</span>'+esc(b):esc(b)).join('')}</div>
+        </div>
+        <div class="header-search">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="搜索用户、批次、策略..." id="globalSearch" value="${esc(state.searchQuery)}" />
+          <div class="search-panel ${state.searchOpen?'open':''}" id="searchPanel">${renderSearchPanel()}</div>
+        </div>
+        <div class="header-tools">
+          <div class="date-pill">
+            <button class="${state.dateRange===7?'active':''}" data-action="date-range" data-range="7">近7天</button>
+            <button class="${state.dateRange===30?'active':''}" data-action="date-range" data-range="30">近30天</button>
+          </div>
+          <div style="position:relative">
+            <button class="icon-btn" data-action="toggle-todo" title="待办事项">🔔<span class="badge-dot"></span></button>
+            <div class="todo-panel ${state.todoOpen?'open':''}">
+              <div class="tp-hd">待办事项 (${MOCK.todos.length})</div>
+              ${MOCK.todos.map((t,i)=>`<div class="todo-item" data-action="todo-click" data-i="${i}">${esc(t.text)}<div class="ti-time">${esc(t.time)}</div></div>`).join('')}
+            </div>
+          </div>
+          <button class="icon-btn" data-action="toggle-theme" title="切换主题">${state.theme==='light'?'🌙':'☀️'}</button>
+          <div class="role-wrap">
+            <div class="role-pill" data-action="toggle-role">${esc(state.role)} ▾</div>
+            <div class="role-dropdown ${state.roleOpen?'open':''}">
+              <div data-action="set-role" data-role="VIP运营组">VIP运营组</div>
+              <div data-action="set-role" data-role="平台运营组">平台运营组</div>
+              <div data-action="set-role" data-role="市场运营组">市场运营组</div>
+            </div>
+          </div>
+        </div>
+      </header>
+      <main class="content" id="mainContent">${content}</main>
+    </div>`;
+
+  $('#drawerRoot').innerHTML = renderDrawer();
+  $('#modalRoot').innerHTML = renderModal();
+
+  if (!state.loading && state.page === 'dashboard') {
+    requestAnimationFrame(() => {
+      drawLineChart('chartReach', MOCK.trendDays, MOCK.reachTrend, '#01696f');
+      drawLineChart('chartConvert', MOCK.trendDays, MOCK.convertTrend, '#2563eb');
+      drawBarChart('chartTeam', ['VIP','平台','市场'],
+        [MOCK.teamVolume.VIP, MOCK.teamVolume.平台, MOCK.teamVolume.市场],
+        ['#01696f','#2563eb','#7c3aed']);
+    });
+  }
+}
+
+function navigate(page) {
+  state.page = page;
+  state.loading = true;
+  state.filtersExpanded = false;
+  renderShell();
+  setTimeout(() => { state.loading = false; renderShell(); }, 400);
+}
+
+function openUserDrawer(id) {
+  state.drawer = { type:'user', id };
+  state.drawerTab = 'profile';
+  if (!MOCK.recentUsers.includes(id)) {
+    MOCK.recentUsers.unshift(id);
+    if (MOCK.recentUsers.length > 5) MOCK.recentUsers.pop();
+  }
+  renderShell();
+}
+
+function openBatchDrawer(id) {
+  state.drawer = { type:'batch', id };
+  state.batchDrawerTab = 'info';
+  renderShell();
+}
+
+function closeDrawer() {
+  state.drawer = null;
+  renderShell();
+}
+
+/* === Events === */
+function handleClick(e) {
+  const el = e.target.closest('[data-action]');
+  if (!el) {
+    if (!e.target.closest('.header-search') && !e.target.closest('.drawer') && !e.target.closest('.modal')) {
+      if (state.searchOpen || state.todoOpen || state.roleOpen) {
+        state.searchOpen = false; state.todoOpen = false; state.roleOpen = false;
+        renderShell();
+      }
+    }
+    return;
+  }
+  const act = el.dataset.action;
+  if (act === 'nav') { navigate(el.dataset.page); return; }
+  if (act === 'disabled-nav') { showToast('功能开发中，敬请期待', 'warn'); return; }
+  if (act === 'toggle-theme') {
+    state.theme = state.theme === 'light' ? 'dark' : 'light';
+    localStorage.setItem('crm-theme', state.theme);
+    renderShell(); return;
+  }
+  if (act === 'toggle-todo') { state.todoOpen = !state.todoOpen; state.roleOpen = false; renderShell(); return; }
+  if (act === 'toggle-role') { state.roleOpen = !state.roleOpen; state.todoOpen = false; renderShell(); return; }
+  if (act === 'set-role') { state.role = el.dataset.role; state.roleOpen = false; showToast('已切换为 ' + state.role); renderShell(); return; }
+  if (act === 'date-range') { state.dateRange = +el.dataset.range; showToast('已切换为近' + state.dateRange + '天数据'); renderShell(); return; }
+  if (act === 'close-alert') { state.alertVisible = false; renderShell(); return; }
+  if (act === 'open-user') { state.page = 'users'; openUserDrawer(el.dataset.id); return; }
+  if (act === 'open-batch') { openBatchDrawer(el.dataset.id); return; }
+  if (act === 'close-drawer' || act === 'close-drawer-bg') { closeDrawer(); return; }
+  if (act === 'drawer-tab') { state.drawerTab = el.dataset.tab; renderShell(); return; }
+  if (act === 'batch-drawer-tab') { state.batchDrawerTab = el.dataset.tab; renderShell(); return; }
+  if (act === 'open-modal') { state.modal = el.dataset.modal; renderShell(); return; }
+  if (act === 'close-modal' || act === 'close-modal-bg') { state.modal = null; renderShell(); return; }
+  if (act === 'confirm-modal') {
+    const msgs = { transfer:'流转申请已提交', strategy:'策略挂载成功', follow:'跟进记录已保存' };
+    const m = state.modal;
+    state.modal = null;
+    showToast(msgs[m] || '操作成功');
+    renderShell(); return;
+  }
+  if (act === 'toast') { showToast(el.dataset.msg || '操作成功'); return; }
+  if (act === 'toggle-filters') { state.filtersExpanded = !state.filtersExpanded; renderShell(); return; }
+  if (act === 'search-batch') {
+    $$('[data-filter="batch"]').forEach(inp => { if (inp.name) state.batchFilters[inp.name] = inp.value; });
+    state.batchPage = 1; renderShell(); return;
+  }
+  if (act === 'reset-batch') { state.batchFilters = {}; state.batchPage = 1; renderShell(); return; }
+  if (act === 'search-user') {
+    $$('[data-filter="user"]').forEach(inp => { if (inp.name) state.userFilters[inp.name] = inp.value; });
+    state.userPage = 1; renderShell(); return;
+  }
+  if (act === 'reset-user') { state.userFilters = {}; state.userPage = 1; renderShell(); return; }
+  if (act === 'select-batch') {
+    const id = el.dataset.id;
+    if (el.checked) state.selectedBatchIds.push(id);
+    else state.selectedBatchIds = state.selectedBatchIds.filter(x => x !== id);
+    renderShell(); return;
+  }
+  if (act === 'select-all-batch') {
+    const list = filterBatches().slice((state.batchPage-1)*state.pageSize, state.batchPage*state.pageSize);
+    state.selectedBatchIds = el.checked ? list.map(b => b.id) : [];
+    renderShell(); return;
+  }
+  if (act === 'select-user') {
+    const id = el.dataset.id;
+    if (el.checked) state.selectedUserIds.push(id);
+    else state.selectedUserIds = state.selectedUserIds.filter(x => x !== id);
+    return;
+  }
+  if (act === 'batch-op') { showToast('批量' + el.dataset.op + '任务已创建，共 ' + state.selectedBatchIds.length + ' 个批次'); return; }
+  if (act === 'export') { showToast('导出任务已创建，完成后将通知您'); return; }
+  if (act === 'create-rule') { showToast('规则任务已创建'); return; }
+  if (act === 'save-rule') { showToast('分层规则已保存'); return; }
+  if (act === 'batch-page') { state.batchPage = +el.dataset.p; renderShell(); return; }
+  if (act === 'user-page') { state.userPage = +el.dataset.p; renderShell(); return; }
+  if (act === 'search-select') {
+    state.searchOpen = false;
+    if (el.dataset.type === 'user') { state.page = 'users'; openUserDrawer(el.dataset.id); }
+    else if (el.dataset.type === 'batch') { state.page = 'batch'; navigate('batch'); setTimeout(() => openBatchDrawer(el.dataset.id), 500); }
+    else showToast('已定位策略：' + el.dataset.id);
+    return;
+  }
+  if (act === 'todo-click') { showToast('已标记待办为处理中'); state.todoOpen = false; renderShell(); return; }
+}
+
+function handleInput(e) {
+  if (e.target.id === 'globalSearch') {
+    state.searchQuery = e.target.value;
+    state.searchOpen = true;
+    const panel = $('#searchPanel');
+    if (panel) panel.innerHTML = renderSearchPanel();
+    panel.classList.add('open');
+  }
+  if (e.target.dataset.rule) {
+    state.ruleForm[e.target.dataset.rule] = e.target.type === 'number' ? +e.target.value : e.target.value;
+    const est = Math.round(12450 * (state.ruleForm.deposit / 500) * (state.ruleForm.activeDays / 3) * (state.ruleForm.vip === 'yes' ? 0.6 : 1));
+    const el = $('#ruleEstimate');
+    if (el) el.textContent = est.toLocaleString();
+  }
+}
+
+function handleFocus(e) {
+  if (e.target.id === 'globalSearch') { state.searchOpen = true; renderShell(); }
+}
+
+/* === Init === */
+document.addEventListener('click', handleClick);
+document.addEventListener('input', handleInput);
+document.addEventListener('focusin', handleFocus);
+window.addEventListener('resize', () => {
+  if (state.page === 'dashboard' && !state.loading) {
+    drawLineChart('chartReach', MOCK.trendDays, MOCK.reachTrend, '#01696f');
+    drawLineChart('chartConvert', MOCK.trendDays, MOCK.convertTrend, '#2563eb');
+    drawBarChart('chartTeam', ['VIP','平台','市场'],
+      [MOCK.teamVolume.VIP, MOCK.teamVolume.平台, MOCK.teamVolume.市场],
+      ['#01696f','#2563eb','#7c3aed']);
+  }
+});
+renderShell();
+</script>
+</body>
+</html>

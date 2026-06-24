@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>名单管理 - 运营CRM</title>
+  <style>
+    :root {
+      --bg: #f5f6f8;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --divider: #f0f0f0;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --text: #1f2937;
+      --text-2: #6b7280;
+      --text-3: #9ca3af;
+      --success: #10b981;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --info: #3b82f6;
+      --shadow: 0 1px 3px rgba(0,0,0,0.06);
+      --radius: 8px;
+      --content-px: 32px;
+      --gap: 20px;
+      --nav-h: 56px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--bg);
+      min-width: 1280px;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    /* === Top Nav === */
+    .topnav {
+      height: var(--nav-h);
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .topnav-logo { font-size: 18px; font-weight: 700; color: var(--primary); margin-right: 40px; }
+    .topnav-links { display: flex; align-items: stretch; height: 100%; gap: 4px; flex: 1; }
+    .topnav-links a {
+      display: flex; align-items: center; padding: 0 16px;
+      font-size: 14px; color: var(--text-2);
+      border-bottom: 2px solid transparent;
+    }
+    .topnav-links a:hover { color: var(--primary); }
+    .topnav-links a.active { color: var(--primary); font-weight: 600; border-bottom-color: var(--primary); }
+    .topnav-right { display: flex; align-items: center; gap: 16px; margin-left: auto; }
+    .team-select {
+      height: 32px; padding: 0 28px 0 10px;
+      border: 1px solid var(--border); border-radius: 6px;
+      background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center;
+      appearance: none; font-size: 13px; cursor: pointer;
+    }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      display: grid; place-items: center; color: #fff; font-size: 13px; font-weight: 600;
+    }
+
+    /* === Page Header === */
+    .page-header {
+      background: var(--card);
+      padding: 24px var(--content-px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .page-header h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+    .page-header p { font-size: 13px; color: var(--text-2); }
+    .btn {
+      height: 36px; padding: 0 16px; border-radius: 6px;
+      border: 1px solid var(--border); background: var(--card);
+      font-size: 14px; cursor: pointer; color: var(--text);
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-hover); color: #fff; }
+    .btn-sm { height: 28px; padding: 0 10px; font-size: 12px; }
+    .btn-danger { color: var(--danger); border-color: transparent; background: transparent; }
+    .btn-danger:hover { background: #fee2e2; }
+    .btn-ghost { border-color: transparent; background: transparent; color: var(--text-2); }
+    .btn-ghost:hover { color: var(--primary); background: #eff6ff; }
+
+    /* === Stats === */
+    .stats-row {
+      padding: var(--gap) var(--content-px);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--gap);
+    }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px 20px;
+    }
+    .stat-card .label { font-size: 13px; color: var(--text-2); margin-bottom: 6px; }
+    .stat-card .value { font-size: 24px; font-weight: 700; }
+
+    /* === Table Card === */
+    .table-section { padding: 0 var(--content-px) 32px; }
+    .table-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .table-toolbar {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--divider);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .table-toolbar input, .table-toolbar select {
+      height: 32px; padding: 0 10px;
+      border: 1px solid var(--border); border-radius: 6px;
+      font-size: 13px; background: var(--card);
+    }
+    .table-toolbar input { width: 220px; }
+    .table-toolbar .filter-label { font-size: 13px; color: var(--text-2); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--divider); font-size: 13px; }
+    th { background: #fafafa; font-weight: 600; color: var(--text-2); font-size: 12px; white-space: nowrap; }
+    tr:hover td { background: #f9fafb; }
+    .batch-id { font-weight: 600; color: var(--primary); }
+    .stack-bar {
+      width: 100px; height: 8px; border-radius: 4px;
+      display: flex; overflow: hidden; background: var(--divider);
+    }
+    .stack-bar span { height: 100%; }
+    .stack-bar .s-green { background: #10b981; }
+    .stack-bar .s-blue { background: #3b82f6; }
+    .stack-bar .s-orange { background: #f59e0b; }
+    .stack-bar .s-red { background: #ef4444; }
+    .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .empty-cell { color: var(--text-3); }
+
+    /* === Pills === */
+    .pill {
+      display: inline-block; padding: 2px 8px;
+      border-radius: 10px; font-size: 11px; font-weight: 500; white-space: nowrap;
+    }
+    .pill-green { background: #d1fae5; color: #065f46; }
+    .pill-orange { background: #fef3c7; color: #92400e; }
+    .pill-gray { background: #f3f4f6; color: #374151; }
+    .pill-blue { background: #dbeafe; color: #1e40af; }
+    .pill-red { background: #fee2e2; color: #991b1b; }
+
+    /* === Pagination === */
+    .pagination {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 6px; padding: 14px 18px; border-top: 1px solid var(--divider);
+    }
+    .pagination button {
+      min-width: 32px; height: 32px; border: 1px solid var(--border);
+      border-radius: 6px; background: var(--card); cursor: pointer; font-size: 13px;
+    }
+    .pagination button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .pagination button:disabled { opacity: .4; cursor: not-allowed; }
+    .pagination .page-info { font-size: 13px; color: var(--text-2); margin-right: 8px; }
+
+    /* === Modal === */
+    .modal-mask {
+      position: fixed; inset: 0; background: rgba(0,0,0,.45);
+      z-index: 200; display: none; place-items: center; padding: 24px;
+    }
+    .modal-mask.open { display: grid; }
+    .modal {
+      background: var(--card); border-radius: var(--radius);
+      width: 720px; max-width: 100%; max-height: 90vh;
+      display: flex; flex-direction: column;
+      box-shadow: 0 20px 50px rgba(0,0,0,.2);
+    }
+    .modal-hd {
+      padding: 18px 22px; border-bottom: 1px solid var(--divider);
+      font-size: 16px; font-weight: 600;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .modal-close {
+      width: 28px; height: 28px; border: 0; background: none;
+      cursor: pointer; font-size: 18px; color: var(--text-3); border-radius: 4px;
+    }
+    .modal-close:hover { background: var(--divider); color: var(--text); }
+    .modal-bd { padding: 18px 22px; overflow-y: auto; flex: 1; }
+    .modal-ft {
+      padding: 14px 22px; border-top: 1px solid var(--divider);
+      display: flex; justify-content: flex-end; gap: 8px; align-items: center;
+    }
+    .modal-ft .ft-left { margin-right: auto; display: flex; gap: 8px; }
+
+    .ai-hint {
+      background: linear-gradient(135deg, #eff6ff, #f5f3ff);
+      border: 1px solid #c7d2fe;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #4338ca;
+      margin-bottom: 14px;
+      display: none;
+    }
+    .ai-hint.show { display: block; }
+
+    .rule-list { margin-bottom: 18px; }
+    .rule-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px; border: 1px solid var(--border);
+      border-radius: 6px; margin-bottom: 8px; background: #fafafa;
+      font-size: 13px;
+    }
+    .rule-drag { color: var(--text-3); cursor: grab; font-size: 16px; user-select: none; }
+    .rule-num { font-weight: 600; color: var(--text-2); min-width: 48px; }
+    .rule-cond { flex: 1; color: var(--text); }
+    .rule-arrow { color: var(--text-3); }
+    .rule-action { font-weight: 500; color: var(--primary); white-space: nowrap; }
+    .rule-hit { font-size: 12px; color: var(--success); min-width: 72px; text-align: right; display: none; }
+    .rule-hit.show { display: block; }
+    .rule-add { margin-top: 8px; }
+
+    .field-ref {
+      background: #f9fafb;
+      border: 1px solid var(--divider);
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+    }
+    .field-ref .ref-title { font-size: 12px; color: var(--text-2); margin-bottom: 8px; font-weight: 600; }
+    .field-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .field-tag {
+      padding: 3px 8px; background: var(--card);
+      border: 1px solid var(--border); border-radius: 4px;
+      font-size: 11px; color: var(--text-2);
+    }
+
+    /* === Toast === */
+    .toast-wrap {
+      position: fixed; bottom: 24px; right: 24px; z-index: 300;
+    }
+    .toast {
+      background: var(--card); border: 1px solid var(--border);
+      border-left: 3px solid var(--success);
+      border-radius: 6px; padding: 12px 18px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.12);
+      font-size: 13px; animation: fadeIn .25s;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    .no-result { text-align: center; padding: 48px; color: var(--text-3); }
+  </style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-logo">运营CRM</div>
+  <div class="topnav-links">
+    <a href="dashboard.html">效果看板</a>
+    <a href="batch.html" class="active">名单管理</a>
+    <a href="user-list.html">用户列表</a>
+    <a href="tier.html">分层管理</a>
+    <a href="task.html">任务管理</a>
+  </div>
+  <div class="topnav-right">
+    <select class="team-select">
+      <option>VIP运营</option>
+      <option>平台运营</option>
+      <option>市场运营</option>
+    </select>
+    <div class="avatar">王</div>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div>
+    <h1>名单管理</h1>
+    <p>管理从大数据平台同步的用户批次，配置分层规则</p>
+  </div>
+  <button class="btn btn-primary" id="btnSync">+ 同步新批次</button>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card"><div class="label">总批次</div><div class="value">47</div></div>
+  <div class="stat-card"><div class="label">运营中用户</div><div class="value">86,420</div></div>
+  <div class="stat-card"><div class="label">待分层批次</div><div class="value" style="color:var(--warn)">2</div></div>
+  <div class="stat-card"><div class="label">本月新增</div><div class="value">5 批次</div></div>
+</div>
+
+<div class="table-section">
+  <div class="table-card">
+    <div class="table-toolbar">
+      <span class="filter-label">状态</span>
+      <select id="statusFilter">
+        <option value="">全部状态</option>
+        <option value="待分层">待分层</option>
+        <option value="分层执行中">分层执行中</option>
+        <option value="分层完成">分层完成</option>
+        <option value="运营中">运营中</option>
+        <option value="已归档">已归档</option>
+      </select>
+      <input type="text" id="searchInput" placeholder="搜索来源说明..." />
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>批次ID</th>
+            <th>来源说明</th>
+            <th>同步时间</th>
+            <th>用户数</th>
+            <th>各层占比</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<!-- 分层规则配置 Modal -->
+<div class="modal-mask" id="modalMask">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hd">
+      <span id="modalTitle">分层规则配置</span>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-bd">
+      <div class="ai-hint" id="aiHint">
+        ✦ AI 建议：根据该批次用户画像，建议将「7天杀率 &gt; 55%」的用户划入低活跃风险层，预计可多命中 1,200 人。
+      </div>
+      <div class="rule-list" id="ruleList"></div>
+      <button class="btn btn-sm btn-ghost rule-add" id="btnAddRule">+ 添加规则</button>
+      <div class="field-ref">
+        <div class="ref-title">可用条件字段</div>
+        <div class="field-tags">
+          <span class="field-tag">VIP等级</span>
+          <span class="field-tag">活跃天数</span>
+          <span class="field-tag">沉默天数</span>
+          <span class="field-tag">GGR</span>
+          <span class="field-tag">7天杀率</span>
+          <span class="field-tag">30天杀率</span>
+          <span class="field-tag">7天投注额</span>
+          <span class="field-tag">30天投注额</span>
+          <span class="field-tag">7天存款</span>
+          <span class="field-tag">30天存款</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <div class="ft-left">
+        <button class="btn btn-ghost" id="btnAiOptimize">AI优化规则</button>
+        <button class="btn" id="btnPreview">预览命中</button>
+      </div>
+      <button class="btn" id="btnCancel">取消</button>
+      <button class="btn btn-primary" id="btnExecute">执行分层</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+/* === Mock Data === */
+const BATCHES = [
+  { id:'2024', name:'低活跃用户7日圈选', time:'06-20 09:15', count:23450, status:'分层完成', dist:[22,38,28,12] },
+  { id:'2023', name:'30日无消费用户', time:'06-18 14:30', count:18200, status:'运营中', dist:[15,42,30,13] },
+  { id:'2022', name:'流失90天用户', time:'06-15 10:00', count:8630, status:'运营中', dist:[8,25,22,45] },
+  { id:'2021', name:'高价值用户促留', time:'06-12 16:45', count:12100, status:'运营中', dist:[58,22,14,6] },
+  { id:'2020', name:'节日前活跃用户', time:'06-10 09:00', count:31200, status:'已归档', dist:[28,35,25,12] },
+  { id:'2019', name:'注册未消费新用户', time:'06-07 11:20', count:9870, status:'运营中', dist:[5,18,52,25] },
+  { id:'2018', name:'沉默用户唤醒', time:'06-03 14:00', count:17600, status:'待分层', dist:null },
+  { id:'2017', name:'高频消费用户维系', time:'05-28 10:30', count:7400, status:'已归档', dist:[45,30,18,7] },
+  { id:'2016', name:'百家乐偏好用户圈选', time:'05-25 08:45', count:14200, status:'运营中', dist:[32,28,26,14] },
+  { id:'2015', name:'端午活动回流名单', time:'05-22 16:00', count:19800, status:'分层完成', dist:[18,36,32,14] },
+  { id:'2014', name:'钻石VIP专属维护', time:'05-18 11:30', count:3200, status:'运营中', dist:[72,18,8,2] },
+  { id:'2013', name:'大额亏损用户召回', time:'05-15 09:20', count:5600, status:'待分层', dist:null }
+];
+
+const DEFAULT_RULES = [
+  { cond:'沉默天数 > 90 且 30天存款 = 0', action:'划入"流失用户"', hit:4200 },
+  { cond:'活跃天数 < 7 且 7天杀率 > 60%', action:'划入"低活跃风险"', hit:5800 },
+  { cond:'VIP等级 包含 黄金/铂金/钻石', action:'划入"高价值活跃"', hit:3100 },
+  { cond:'其余', action:'划入"沉默用户"（兜底）', hit:4500 }
+];
+
+const PREVIEW_HITS = [3200, 4800, 2900, 6700];
+
+/* === State === */
+const state = {
+  batches: BATCHES.map(b => ({ ...b })),
+  filterStatus: '',
+  search: '',
+  page: 1,
+  pageSize: 8,
+  modalOpen: false,
+  currentBatchId: null,
+  rules: [],
+  previewShown: false,
+  aiShown: false
+};
+
+/* === Utils === */
+function pillClass(status) {
+  const m = {
+    '运营中': 'pill-green', '分层完成': 'pill-blue', '待分层': 'pill-orange',
+    '分层执行中': 'pill-orange', '已归档': 'pill-gray'
+  };
+  return m[status] || 'pill-gray';
+}
+
+function stackBar(dist) {
+  if (!dist) return '<span class="empty-cell">—</span>';
+  const colors = ['s-green','s-blue','s-orange','s-red'];
+  return '<div class="stack-bar">' + dist.map((p,i) =>
+    `<span class="${colors[i]}" style="width:${p}%"></span>`
+  ).join('') + '</div>';
+}
+
+function renderActions(b) {
+  if (b.status === '待分层') {
+    return `<button class="btn btn-sm btn-primary" data-action="config" data-id="${b.id}">配置规则</button>`;
+  }
+  if (b.status === '分层完成') {
+    return `<a class="btn btn-sm" href="user-list.html">查看用户</a>
+      <a class="btn btn-sm" href="tier.html">进入分层</a>`;
+  }
+  if (b.status === '运营中') {
+    return `<a class="btn btn-sm" href="user-list.html">查看用户</a>
+      <a class="btn btn-sm" href="tier.html">查看分层</a>`;
+  }
+  if (b.status === '分层执行中') {
+    return `<span class="empty-cell">分层中...</span>`;
+  }
+  return `<button class="btn btn-sm btn-ghost" data-action="detail" data-id="${b.id}">查看详情</button>`;
+}
+
+function getFiltered() {
+  return state.batches.filter(b => {
+    if (state.filterStatus && b.status !== state.filterStatus) return false;
+    if (state.search && !b.name.includes(state.search)) return false;
+    return true;
+  });
+}
+
+function showToast(msg) {
+  const wrap = document.getElementById('toastWrap');
+  wrap.innerHTML = `<div class="toast">${msg}</div>`;
+  setTimeout(() => { wrap.innerHTML = ''; }, 3500);
+}
+
+/* === Render Table === */
+function renderTable() {
+  const filtered = getFiltered();
+  const total = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(total / state.pageSize));
+  if (state.page > totalPages) state.page = totalPages;
+  const start = (state.page - 1) * state.pageSize;
+  const pageData = filtered.slice(start, start + state.pageSize);
+
+  const tbody = document.getElementById('tableBody');
+  if (!pageData.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="no-result">暂无匹配批次</td></tr>';
+  } else {
+    tbody.innerHTML = pageData.map(b => `
+      <tr>
+        <td><span class="batch-id">#${b.id}</span></td>
+        <td>${b.name}</td>
+        <td>${b.time}</td>
+        <td>${b.count.toLocaleString()}</td>
+        <td>${stackBar(b.dist)}</td>
+        <td><span class="pill ${pillClass(b.status)}">${b.status}</span></td>
+        <td><div class="actions">${renderActions(b)}</div></td>
+      </tr>
+    `).join('');
+  }
+
+  const pag = document.getElementById('pagination');
+  pag.innerHTML = `
+    <span class="page-info">共 ${total} 条</span>
+    <button ${state.page<=1?'disabled':''} data-page="${state.page-1}">‹</button>
+    ${Array.from({length: totalPages}, (_,i) =>
+      `<button class="${i+1===state.page?'active':''}" data-page="${i+1}">${i+1}</button>`
+    ).join('')}
+    <button ${state.page>=totalPages?'disabled':''} data-page="${state.page+1}">›</button>
+  `;
+}
+
+/* === Modal === */
+function openModal(batchId) {
+  const b = state.batches.find(x => x.id === batchId);
+  if (!b) return;
+  state.currentBatchId = batchId;
+  state.rules = DEFAULT_RULES.map(r => ({ ...r }));
+  state.previewShown = false;
+  state.aiShown = false;
+  state.modalOpen = true;
+  document.getElementById('modalTitle').textContent = `分层规则配置 - 批次#${batchId}`;
+  document.getElementById('aiHint').classList.remove('show');
+  renderRules();
+  document.getElementById('modalMask').classList.add('open');
+}
+
+function closeModal() {
+  state.modalOpen = false;
+  document.getElementById('modalMask').classList.remove('open');
+}
+
+function renderRules() {
+  const list = document.getElementById('ruleList');
+  list.innerHTML = state.rules.map((r, i) => `
+    <div class="rule-item" data-idx="${i}">
+      <span class="rule-drag">⠿</span>
+      <span class="rule-num">规则${i+1}</span>
+      <span class="rule-cond">${r.cond}</span>
+      <span class="rule-arrow">→</span>
+      <span class="rule-action">${r.action}</span>
+      <span class="rule-hit ${state.previewShown?'show':''}">${(PREVIEW_HITS[i]||r.hit||0).toLocaleString()}人</span>
+      ${i < state.rules.length - 1 ? `<button class="btn btn-sm btn-danger" data-action="del-rule" data-idx="${i}">删除</button>` : ''}
+    </div>
+  `).join('');
+}
+
+/* === Events === */
+document.getElementById('statusFilter').addEventListener('change', e => {
+  state.filterStatus = e.target.value;
+  state.page = 1;
+  renderTable();
+});
+
+document.getElementById('searchInput').addEventListener('input', e => {
+  state.search = e.target.value.trim();
+  state.page = 1;
+  renderTable();
+});
+
+document.getElementById('tableBody').addEventListener('click', e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  if (btn.dataset.action === 'config') openModal(btn.dataset.id);
+  if (btn.dataset.action === 'detail') showToast('批次 #' + btn.dataset.id + ' 详情（原型演示）');
+});
+
+document.getElementById('pagination').addEventListener('click', e => {
+  const btn = e.target.closest('[data-page]');
+  if (!btn || btn.disabled) return;
+  state.page = +btn.dataset.page;
+  renderTable();
+});
+
+document.getElementById('btnSync').addEventListener('click', () => {
+  openModal('2018');
+});
+
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('btnCancel').addEventListener('click', closeModal);
+document.getElementById('modalMask').addEventListener('click', closeModal);
+
+document.getElementById('btnAddRule').addEventListener('click', () => {
+  state.rules.splice(state.rules.length - 1, 0, {
+    cond: '7天投注额 < 500 且 活跃天数 < 3',
+    action: '划入"低活跃风险"',
+    hit: 1200
+  });
+  renderRules();
+});
+
+document.getElementById('ruleList').addEventListener('click', e => {
+  const btn = e.target.closest('[data-action="del-rule"]');
+  if (!btn) return;
+  state.rules.splice(+btn.dataset.idx, 1);
+  renderRules();
+});
+
+document.getElementById('btnAiOptimize').addEventListener('click', () => {
+  state.aiShown = true;
+  document.getElementById('aiHint').classList.add('show');
+  if (!state.rules.some(r => r.cond.includes('55%'))) {
+    state.rules.splice(1, 0, {
+      cond: '7天杀率 > 55% 且 活跃天数 < 5',
+      action: '划入"低活跃风险"',
+      hit: 1200
+    });
+    renderRules();
+  }
+});
+
+document.getElementById('btnPreview').addEventListener('click', () => {
+  state.previewShown = true;
+  renderRules();
+});
+
+document.getElementById('btnExecute').addEventListener('click', () => {
+  const b = state.batches.find(x => x.id === state.currentBatchId);
+  if (b) {
+    b.status = '分层执行中';
+    b.dist = null;
+    setTimeout(() => {
+      b.status = '分层完成';
+      b.dist = [18, 34, 32, 16];
+      renderTable();
+    }, 2000);
+  }
+  closeModal();
+  showToast('分层任务已提交，预计2分钟完成');
+  renderTable();
+});
+
+renderTable();
+</script>
+</body>
+</html>

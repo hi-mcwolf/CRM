@@ -1,0 +1,792 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>用户列表 - 运营CRM</title>
+  <style>
+    :root {
+      --bg: #f5f6f8; --card: #ffffff; --border: #e5e7eb; --divider: #f0f0f0;
+      --primary: #2563eb; --primary-hover: #1d4ed8;
+      --text: #1f2937; --text-2: #6b7280; --text-3: #9ca3af;
+      --success: #10b981; --warn: #f59e0b; --danger: #ef4444; --info: #3b82f6;
+      --shadow: 0 1px 3px rgba(0,0,0,0.06);
+      --radius: 8px; --content-px: 32px; --gap: 20px; --nav-h: 56px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 14px; color: var(--text); background: var(--bg); min-width: 1400px;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    /* Top Nav */
+    .topnav {
+      height: var(--nav-h); background: var(--card); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 24px; position: sticky; top: 0; z-index: 100;
+    }
+    .topnav-logo { font-size: 18px; font-weight: 700; color: var(--primary); margin-right: 40px; }
+    .topnav-links { display: flex; align-items: stretch; height: 100%; gap: 4px; flex: 1; }
+    .topnav-links a {
+      display: flex; align-items: center; padding: 0 16px; font-size: 14px; color: var(--text-2);
+      border-bottom: 2px solid transparent;
+    }
+    .topnav-links a:hover { color: var(--primary); }
+    .topnav-links a.active { color: var(--primary); font-weight: 600; border-bottom-color: var(--primary); }
+    .topnav-right { display: flex; align-items: center; gap: 16px; margin-left: auto; }
+    .team-select {
+      height: 32px; padding: 0 28px 0 10px; border: 1px solid var(--border); border-radius: 6px;
+      background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center;
+      appearance: none; font-size: 13px; cursor: pointer;
+    }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      display: grid; place-items: center; color: #fff; font-size: 13px; font-weight: 600;
+    }
+
+    /* Breadcrumb bar */
+    .crumb-bar {
+      background: var(--card); padding: 14px var(--content-px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .breadcrumb { font-size: 13px; color: var(--text-2); }
+    .breadcrumb a { color: var(--primary); }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .breadcrumb span { margin: 0 6px; color: var(--text-3); }
+    .mode-area { display: flex; align-items: center; gap: 14px; }
+    .mode-badge {
+      padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 500;
+      background: #dbeafe; color: #1e40af;
+    }
+    .mode-badge.tier { background: #fef3c7; color: #92400e; }
+    .mode-switch {
+      display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
+    }
+    .mode-switch button {
+      padding: 6px 14px; border: 0; background: var(--card);
+      font-size: 13px; cursor: pointer; color: var(--text-2);
+    }
+    .mode-switch button.active { background: var(--primary); color: #fff; }
+
+    /* Buttons */
+    .btn {
+      height: 32px; padding: 0 12px; border-radius: 6px;
+      border: 1px solid var(--border); background: var(--card);
+      font-size: 13px; cursor: pointer; color: var(--text);
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .btn:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-hover); color: #fff; }
+    .btn-sm { height: 28px; padding: 0 10px; font-size: 12px; }
+    .btn-link { border: 0; background: none; color: var(--primary); padding: 0 4px; height: auto; cursor: pointer; font-size: 13px; }
+    .btn-link:hover { text-decoration: underline; }
+
+    /* Content */
+    .page-body { padding: var(--gap) var(--content-px) 32px; }
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: var(--gap);
+    }
+    .filter-card { padding: 16px 18px; }
+    .filters {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 14px;
+    }
+    .field label { display: block; font-size: 12px; color: var(--text-2); margin-bottom: 4px; }
+    .field input, .field select {
+      width: 100%; height: 32px; padding: 0 10px;
+      border: 1px solid var(--border); border-radius: 6px; font-size: 13px; background: var(--card);
+    }
+    .filter-actions { margin-top: 12px; display: flex; gap: 8px; }
+
+    /* Batch bar */
+    .batch-bar {
+      padding: 10px 18px; background: #eff6ff; border: 1px solid #bfdbfe;
+      border-radius: var(--radius); margin-bottom: var(--gap);
+      display: none; align-items: center; gap: 10px; font-size: 13px;
+    }
+    .batch-bar.show { display: flex; }
+    .batch-bar .sel-count { font-weight: 600; color: var(--primary); margin-right: 8px; }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--divider); font-size: 13px; white-space: nowrap; }
+    th { background: #fafafa; font-weight: 600; color: var(--text-2); font-size: 12px; }
+    tr:hover td { background: #f9fafb; }
+    .ai-desc { color: var(--text-3); font-style: italic; font-size: 12px; max-width: 200px; white-space: normal; }
+    .empty-dash { color: var(--text-3); }
+    .actions { display: flex; gap: 4px; }
+
+    /* Pills & badges */
+    .pill {
+      display: inline-block; padding: 2px 8px; border-radius: 10px;
+      font-size: 11px; font-weight: 500;
+    }
+    .pill-green { background: #d1fae5; color: #065f46; }
+    .pill-orange { background: #fef3c7; color: #92400e; }
+    .pill-gray { background: #f3f4f6; color: #374151; }
+    .pill-blue { background: #dbeafe; color: #1e40af; }
+    .pill-red { background: #fee2e2; color: #991b1b; }
+    .pill-goal-blue { background: #dbeafe; color: #1d4ed8; }
+    .pill-goal-green { background: #d1fae5; color: #065f46; }
+    .pill-goal-orange { background: #ffedd5; color: #c2410c; }
+    .vip-badge {
+      display: inline-block; padding: 1px 6px; border-radius: 4px;
+      font-size: 11px; font-weight: 600; border: 1px solid;
+    }
+    .vip-钻石 { background: #f5f3ff; color: #6d28d9; border-color: #c4b5fd; }
+    .vip-铂金 { background: #ecfeff; color: #0e7490; border-color: #a5f3fc; }
+    .vip-黄金 { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+    .vip-白银 { background: #f8fafc; color: #475569; border-color: #cbd5e1; }
+    .vip-青铜 { background: #fff7ed; color: #9a3412; border-color: #fed7aa; }
+    .priority { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
+    .priority .dot { width: 7px; height: 7px; border-radius: 50%; }
+    .priority-high .dot { background: var(--danger); }
+    .priority-mid .dot { background: var(--warn); }
+    .priority-low .dot { background: var(--text-3); }
+
+    /* Pagination */
+    .pagination {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 6px; padding: 12px 18px; border-top: 1px solid var(--divider);
+    }
+    .pagination button {
+      min-width: 32px; height: 32px; border: 1px solid var(--border);
+      border-radius: 6px; background: var(--card); cursor: pointer; font-size: 13px;
+    }
+    .pagination button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .pagination button:disabled { opacity: .4; cursor: not-allowed; }
+    .pagination .page-info { font-size: 13px; color: var(--text-2); margin-right: 8px; }
+    .no-result { text-align: center; padding: 48px; color: var(--text-3); }
+
+    /* Drawer */
+    .drawer-mask {
+      position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 200;
+      opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .drawer-mask.open { opacity: 1; pointer-events: auto; }
+    .drawer {
+      position: fixed; top: 0; right: 0; bottom: 0; width: 480px;
+      background: var(--card); box-shadow: -4px 0 24px rgba(0,0,0,.12);
+      z-index: 201; transform: translateX(100%); transition: transform .25s;
+      display: flex; flex-direction: column;
+    }
+    .drawer.open { transform: translateX(0); }
+    .drawer-hd {
+      padding: 16px 20px; border-bottom: 1px solid var(--divider);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .drawer-hd h3 { font-size: 16px; font-weight: 600; }
+    .drawer-close { border: 0; background: none; cursor: pointer; font-size: 18px; color: var(--text-3); }
+    .drawer-bd { flex: 1; overflow-y: auto; padding: 18px 20px; }
+    .drawer-ft {
+      padding: 14px 20px; border-top: 1px solid var(--divider);
+      display: flex; justify-content: flex-end; gap: 8px;
+    }
+    .user-summary {
+      background: #f9fafb; border: 1px solid var(--divider);
+      border-radius: 6px; padding: 12px 14px; margin-bottom: 18px; font-size: 13px;
+    }
+    .user-summary .sum-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 6px; }
+    .user-summary .sum-label { color: var(--text-2); }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 12px; color: var(--text-2); margin-bottom: 5px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+      border-radius: 6px; font-size: 13px; background: var(--card);
+    }
+    .form-group textarea { min-height: 80px; resize: vertical; }
+    .form-switch { display: flex; align-items: center; gap: 10px; }
+    .form-switch input[type="checkbox"] { width: 16px; height: 16px; }
+    .conclusion-select { flex: 1; }
+
+    /* Modal */
+    .modal-mask {
+      position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200;
+      display: none; place-items: center; padding: 24px;
+    }
+    .modal-mask.open { display: grid; }
+    .modal {
+      background: var(--card); border-radius: var(--radius); width: 520px; max-width: 100%;
+      box-shadow: 0 20px 50px rgba(0,0,0,.2);
+    }
+    .modal-hd {
+      padding: 16px 20px; border-bottom: 1px solid var(--divider);
+      font-size: 16px; font-weight: 600;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .modal-bd { padding: 18px 20px; }
+    .modal-ft {
+      padding: 14px 20px; border-top: 1px solid var(--divider);
+      display: flex; justify-content: flex-end; gap: 8px;
+    }
+    .radio-group { display: flex; gap: 16px; margin-top: 4px; }
+    .radio-group label { display: flex; align-items: center; gap: 5px; font-size: 13px; cursor: pointer; }
+
+    /* Toast */
+    .toast-wrap { position: fixed; bottom: 24px; right: 24px; z-index: 300; }
+    .toast {
+      background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--success);
+      border-radius: 6px; padding: 12px 18px; box-shadow: 0 4px 12px rgba(0,0,0,.12);
+      font-size: 13px; animation: fadeIn .25s;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    /* Tier adjust mini modal */
+    .tier-modal .modal { width: 400px; }
+  </style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-logo">运营CRM</div>
+  <div class="topnav-links">
+    <a href="dashboard.html">效果看板</a>
+    <a href="batch.html">名单管理</a>
+    <a href="user-list.html" class="active">用户列表</a>
+    <a href="tier.html">分层管理</a>
+    <a href="task.html">任务管理</a>
+  </div>
+  <div class="topnav-right">
+    <select class="team-select" id="currentTeam">
+      <option>VIP运营</option>
+      <option>平台运营</option>
+      <option>市场运营</option>
+    </select>
+    <div class="avatar">李</div>
+  </div>
+</nav>
+
+<div class="crumb-bar">
+  <div class="breadcrumb">
+    <a href="batch.html">名单管理</a><span>/</span>
+    <a href="batch.html">批次#2024</a><span>/</span>
+    用户列表
+  </div>
+  <div class="mode-area">
+    <span class="mode-badge" id="modeBadge">运营操作模式</span>
+    <div class="mode-switch" id="modeSwitch">
+      <button data-mode="tier">分层操作模式</button>
+      <button data-mode="ops" class="active">运营操作模式</button>
+    </div>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="card filter-card">
+    <div class="filters">
+      <div class="field"><label>批次</label>
+        <select id="fBatch"><option value="">全部批次</option><option value="2024" selected>批次#2024</option><option value="2023">批次#2023</option></select>
+      </div>
+      <div class="field"><label>分层</label>
+        <select id="fTier"><option value="">全部分层</option><option>高价值活跃</option><option>低活跃风险</option><option>沉默用户</option><option>流失用户</option></select>
+      </div>
+      <div class="field"><label>业务目标</label>
+        <select id="fGoal"><option value="">全部</option><option>促活</option><option>促留</option><option>召回</option></select>
+      </div>
+      <div class="field"><label>归属团队</label>
+        <select id="fTeam"><option value="">全部团队</option><option>VIP运营</option><option>平台运营</option><option>市场运营</option></select>
+      </div>
+      <div class="field"><label>优先级</label>
+        <select id="fPriority"><option value="">全部</option><option>高</option><option>中</option><option>低</option></select>
+      </div>
+      <div class="field"><label>执行结论</label>
+        <select id="fConclusion"><option value="">全部</option><option>有效</option><option>无效</option><option>进行中</option></select>
+      </div>
+      <div class="field"><label>搜索用户ID</label>
+        <input type="text" id="fSearch" placeholder="U***..." />
+      </div>
+      <div class="field" style="display:flex;align-items:flex-end">
+        <button class="btn" id="btnReset">重置</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="batch-bar" id="batchBar">
+    <span class="sel-count" id="selCount">已选 0 项</span>
+    <span id="batchBtns"></span>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<!-- 跟进抽屉 -->
+<div class="drawer-mask" id="drawerMask"></div>
+<div class="drawer" id="followDrawer">
+  <div class="drawer-hd">
+    <h3 id="drawerTitle">用户跟进</h3>
+    <button class="drawer-close" id="drawerClose">✕</button>
+  </div>
+  <div class="drawer-bd">
+    <div class="user-summary" id="drawerSummary"></div>
+    <div class="form-group"><label>跟进方式</label>
+      <select id="fMethod"><option>电话</option><option>短信</option><option>邮件</option><option>线下</option><option>其他</option></select>
+    </div>
+    <div class="form-group"><label>跟进结果</label>
+      <select id="fResult">
+        <option>已联系-有意向</option><option>已联系-无意向</option><option>未接通</option><option>已拒绝</option><option>其他</option>
+      </select>
+    </div>
+    <div class="form-group"><label>跟进内容</label>
+      <textarea id="fContent" placeholder="记录跟进详情..."></textarea>
+    </div>
+    <div class="form-group"><label>下次跟进时间</label>
+      <input type="date" id="fNextDate" />
+    </div>
+    <div class="form-group">
+      <div class="form-switch">
+        <input type="checkbox" id="fUpdateConclusion" />
+        <label for="fUpdateConclusion" style="margin:0">是否更新执行结论</label>
+        <select class="conclusion-select" id="fNewConclusion" disabled>
+          <option>有效</option><option>无效</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="drawer-ft">
+    <button class="btn" id="drawerCancel">取消</button>
+    <button class="btn btn-primary" id="drawerSubmit">提交跟进</button>
+  </div>
+</div>
+
+<!-- 流转 Modal -->
+<div class="modal-mask" id="transferMask">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hd">
+      <span>用户流转</span>
+      <button class="drawer-close" id="transferClose">✕</button>
+    </div>
+    <div class="modal-bd">
+      <p style="margin-bottom:14px;font-size:13px;color:var(--text-2)" id="transferCount">已选 1 人</p>
+      <div class="form-group"><label>目标团队</label>
+        <select id="tTeam"><option>VIP运营</option><option>平台运营</option><option>市场运营</option></select>
+      </div>
+      <div class="form-group"><label>流转原因</label>
+        <select id="tReason"><option>策略无效</option><option>不符合本团队定位</option><option>客户主动要求</option><option>其他</option></select>
+      </div>
+      <div class="form-group"><label>是否保留当前策略</label>
+        <div class="radio-group">
+          <label><input type="radio" name="keepStrategy" value="keep" checked /> 保留</label>
+          <label><input type="radio" name="keepStrategy" value="stop" /> 终止当前策略</label>
+        </div>
+      </div>
+      <div class="form-group"><label>备注</label>
+        <textarea id="tNote" placeholder="补充说明..."></textarea>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn" id="transferCancel">取消</button>
+      <button class="btn btn-primary" id="transferConfirm">确认流转</button>
+    </div>
+  </div>
+</div>
+
+<!-- 调层 Modal -->
+<div class="modal-mask tier-modal" id="tierMask">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hd">
+      <span id="tierModalTitle">调整分层</span>
+      <button class="drawer-close" id="tierClose">✕</button>
+    </div>
+    <div class="modal-bd">
+      <div class="form-group"><label>目标分层</label>
+        <select id="tierTarget">
+          <option>高价值活跃</option><option>低活跃风险</option><option>沉默用户</option><option>流失用户</option>
+        </select>
+      </div>
+      <div class="form-group"><label>调整原因</label>
+        <textarea id="tierReason" placeholder="说明调层原因..."></textarea>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn" id="tierCancel">取消</button>
+      <button class="btn btn-primary" id="tierConfirm">确认调层</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+const OPERATOR = '李运营';
+
+const USERS = [
+  { id:'U***8821', vip:'钻石', portrait:'活跃2天', priority:'高', desc:'近7天加注持续亏损，存款充足', goal:'促留', strategyStatus:'执行中', conclusion:'进行中', follow:'06-21 李运营', team:'VIP运营', tier:'高价值活跃', ggr:'¥28,600', killRate:'62%' },
+  { id:'U***5640', vip:'黄金', portrait:'沉默45天', priority:'中', desc:'一个月内输，近期无登录', goal:'召回', strategyStatus:'执行中', conclusion:'进行中', follow:'06-18 王运营', team:'平台运营', tier:'沉默用户', ggr:'-¥8,200', killRate:'71%' },
+  { id:'U***3392', vip:'白银', portrait:'沉默92天', priority:'低', desc:'流失超90天，存款为0', goal:'召回', strategyStatus:'已完成', conclusion:'无效', follow:'06-15 王运营', team:'平台运营', tier:'流失用户', ggr:'¥0', killRate:'—' },
+  { id:'U***7715', vip:'铂金', portrait:'活跃1天', priority:'高', desc:'7天内输，昨日大额存款', goal:'促留', strategyStatus:'执行中', conclusion:'有效', follow:'06-20 李运营', team:'VIP运营', tier:'高价值活跃', ggr:'¥15,400', killRate:'58%' },
+  { id:'U***2204', vip:'青铜', portrait:'活跃15天', priority:'低', desc:'整体输，活跃度稳定', goal:'促活', strategyStatus:'已完成', conclusion:'有效', follow:'—', team:'市场运营', tier:'低活跃风险', ggr:'-¥2,100', killRate:'55%' },
+  { id:'U***9103', vip:'黄金', portrait:'活跃5天', priority:'中', desc:'百家乐偏好，近7日投注额上升', goal:'促活', strategyStatus:'执行中', conclusion:'进行中', follow:'06-22 张运营', team:'VIP运营', tier:'高价值活跃', ggr:'¥6,800', killRate:'48%' },
+  { id:'U***4487', vip:'白银', portrait:'沉默30天', priority:'中', desc:'30天无充值，Push未响应', goal:'召回', strategyStatus:'执行中', conclusion:'进行中', follow:'06-19 王运营', team:'平台运营', tier:'沉默用户', ggr:'-¥3,400', killRate:'65%' },
+  { id:'U***6631', vip:'钻石', portrait:'活跃3天', priority:'高', desc:'高频大额投注，7天杀率72%', goal:'促留', strategyStatus:'执行中', conclusion:'有效', follow:'06-23 李运营', team:'VIP运营', tier:'高价值活跃', ggr:'¥42,100', killRate:'72%' },
+  { id:'U***1578', vip:'青铜', portrait:'沉默60天', priority:'低', desc:'注册后仅消费一次，长期沉默', goal:'促活', strategyStatus:'草稿', conclusion:'进行中', follow:'—', team:'市场运营', tier:'沉默用户', ggr:'-¥680', killRate:'80%' },
+  { id:'U***8290', vip:'铂金', portrait:'活跃7天', priority:'高', desc:'体育偏好，近7日盈利，存款增长', goal:'促留', strategyStatus:'执行中', conclusion:'有效', follow:'06-24 李运营', team:'VIP运营', tier:'高价值活跃', ggr:'¥19,200', killRate:'42%' },
+  { id:'U***3056', vip:'黄金', portrait:'沉默15天', priority:'中', desc:'电销3次未接通，短信已读无回复', goal:'召回', strategyStatus:'执行中', conclusion:'无效', follow:'06-17 王运营', team:'平台运营', tier:'低活跃风险', ggr:'-¥5,600', killRate:'68%' },
+  { id:'U***7142', vip:'白银', portrait:'活跃1天', priority:'低', desc:'新转入批次，尚未挂载策略', goal:'促活', strategyStatus:'—', conclusion:'进行中', follow:'—', team:'市场运营', tier:'低活跃风险', ggr:'¥1,200', killRate:'35%' }
+];
+
+const state = {
+  mode: 'ops',
+  users: USERS.map(u => ({ ...u })),
+  selected: [],
+  filters: { batch:'2024', tier:'', goal:'', team:'', priority:'', conclusion:'', search:'' },
+  page: 1,
+  pageSize: 10,
+  followUserId: null,
+  transferIds: [],
+  tierUserId: null
+};
+
+function vipClass(v) {
+  return 'vip-badge vip-' + v;
+}
+function goalPill(g) {
+  const m = { '促活':'pill-goal-blue', '促留':'pill-goal-green', '召回':'pill-goal-orange' };
+  return `<span class="pill ${m[g]||'pill-gray'}">${g}</span>`;
+}
+function statusPill(s) {
+  const m = { '执行中':'pill-orange', '已完成':'pill-blue', '草稿':'pill-gray', '—':'pill-gray' };
+  return `<span class="pill ${m[s]||'pill-gray'}">${s}</span>`;
+}
+function conclusionPill(c) {
+  const m = { '有效':'pill-green', '无效':'pill-red', '进行中':'pill-orange' };
+  return `<span class="pill ${m[c]||'pill-gray'}">${c}</span>`;
+}
+function priorityHtml(p) {
+  const cls = { '高':'priority-high', '中':'priority-mid', '低':'priority-low' };
+  return `<span class="priority ${cls[p]}"><span class="dot"></span>${p}</span>`;
+}
+
+function getFiltered() {
+  return state.users.filter(u => {
+    const f = state.filters;
+    if (f.tier && u.tier !== f.tier) return false;
+    if (f.goal && u.goal !== f.goal) return false;
+    if (f.team && u.team !== f.team) return false;
+    if (f.priority && u.priority !== f.priority) return false;
+    if (f.conclusion && u.conclusion !== f.conclusion) return false;
+    if (f.search && !u.id.includes(f.search)) return false;
+    return true;
+  });
+}
+
+function showToast(msg) {
+  document.getElementById('toastWrap').innerHTML = `<div class="toast">${msg}</div>`;
+  setTimeout(() => { document.getElementById('toastWrap').innerHTML = ''; }, 3500);
+}
+
+function today() {
+  const d = new Date();
+  return `${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function renderHead() {
+  const ops = state.mode === 'ops';
+  document.getElementById('tableHead').innerHTML = ops ? `
+    <tr>
+      <th><input type="checkbox" id="checkAll" /></th>
+      <th>用户ID</th><th>VIP等级</th><th>用户画像</th><th>优先级</th>
+      <th>用户描述(AI)</th><th>业务目标</th><th>策略执行状态</th>
+      <th>执行结论</th><th>最近跟进</th><th>归属团队</th><th>操作</th>
+    </tr>` : `
+    <tr>
+      <th><input type="checkbox" id="checkAll" /></th>
+      <th>用户ID</th><th>VIP等级</th><th>用户画像</th><th>优先级</th>
+      <th>用户描述(AI)</th><th>当前分层</th><th>GGR</th><th>7天杀率</th><th>操作</th>
+    </tr>`;
+}
+
+function renderTable() {
+  renderHead();
+  const filtered = getFiltered();
+  const totalPages = Math.max(1, Math.ceil(filtered.length / state.pageSize));
+  if (state.page > totalPages) state.page = totalPages;
+  const start = (state.page - 1) * state.pageSize;
+  const pageData = filtered.slice(start, start + state.pageSize);
+  const ops = state.mode === 'ops';
+
+  const tbody = document.getElementById('tableBody');
+  if (!pageData.length) {
+    tbody.innerHTML = `<tr><td colspan="${ops?12:10}" class="no-result">暂无匹配用户</td></tr>`;
+  } else if (ops) {
+    tbody.innerHTML = pageData.map(u => `
+      <tr>
+        <td><input type="checkbox" class="row-check" data-id="${u.id}" ${state.selected.includes(u.id)?'checked':''} /></td>
+        <td><strong>${u.id}</strong></td>
+        <td><span class="${vipClass(u.vip)}">${u.vip}</span></td>
+        <td>${u.portrait}</td>
+        <td>${priorityHtml(u.priority)}</td>
+        <td class="ai-desc">${u.desc}</td>
+        <td>${goalPill(u.goal)}</td>
+        <td>${statusPill(u.strategyStatus)}</td>
+        <td>${conclusionPill(u.conclusion)}</td>
+        <td>${u.follow === '—' ? '<span class="empty-dash">—</span>' : u.follow}</td>
+        <td>${u.team}</td>
+        <td><div class="actions">
+          <button class="btn-link" data-action="follow" data-id="${u.id}">跟进</button>
+          <a class="btn-link" href="user-detail.html">详情</a>
+          <button class="btn-link" data-action="transfer" data-id="${u.id}">流转</button>
+        </div></td>
+      </tr>`).join('');
+  } else {
+    tbody.innerHTML = pageData.map(u => `
+      <tr>
+        <td><input type="checkbox" class="row-check" data-id="${u.id}" ${state.selected.includes(u.id)?'checked':''} /></td>
+        <td><strong>${u.id}</strong></td>
+        <td><span class="${vipClass(u.vip)}">${u.vip}</span></td>
+        <td>${u.portrait}</td>
+        <td>${priorityHtml(u.priority)}</td>
+        <td class="ai-desc">${u.desc}</td>
+        <td><span class="pill pill-blue">${u.tier}</span></td>
+        <td>${u.ggr}</td>
+        <td>${u.killRate}</td>
+        <td><div class="actions">
+          <button class="btn-link" data-action="tier" data-id="${u.id}">调层</button>
+          <a class="btn-link" href="user-detail.html">详情</a>
+        </div></td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('pagination').innerHTML = `
+    <span class="page-info">共 ${filtered.length} 条</span>
+    <button ${state.page<=1?'disabled':''} data-page="${state.page-1}">‹</button>
+    ${Array.from({length:totalPages},(_,i)=>`<button class="${i+1===state.page?'active':''}" data-page="${i+1}">${i+1}</button>`).join('')}
+    <button ${state.page>=totalPages?'disabled':''} data-page="${state.page+1}">›</button>
+  `;
+
+  const allChecked = pageData.length && pageData.every(u => state.selected.includes(u.id));
+  const checkAll = document.getElementById('checkAll');
+  if (checkAll) checkAll.checked = allChecked;
+
+  renderBatchBar();
+}
+
+function renderBatchBar() {
+  const bar = document.getElementById('batchBar');
+  const n = state.selected.length;
+  if (!n) { bar.classList.remove('show'); return; }
+  bar.classList.add('show');
+  document.getElementById('selCount').textContent = `已选 ${n} 项`;
+  const ops = state.mode === 'ops';
+  document.getElementById('batchBtns').innerHTML = ops
+    ? `<button class="btn btn-sm" data-action="batch-follow">批量跟进</button>
+       <button class="btn btn-sm" data-action="batch-transfer">批量流转</button>
+       <button class="btn btn-sm" data-action="batch-priority">批量调整优先级</button>`
+    : `<button class="btn btn-sm" data-action="batch-tier">批量调层</button>
+       <button class="btn btn-sm" data-action="batch-priority">批量调整优先级</button>`;
+}
+
+function renderMode() {
+  const ops = state.mode === 'ops';
+  document.getElementById('modeBadge').textContent = ops ? '运营操作模式' : '分层操作模式';
+  document.getElementById('modeBadge').className = 'mode-badge' + (ops ? '' : ' tier');
+  document.querySelectorAll('#modeSwitch button').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === state.mode);
+  });
+}
+
+/* Drawer */
+function openFollow(id) {
+  const u = state.users.find(x => x.id === id);
+  if (!u) return;
+  state.followUserId = id;
+  document.getElementById('drawerTitle').textContent = `用户跟进 - ${u.id}`;
+  document.getElementById('drawerSummary').innerHTML = `
+    <div class="sum-row"><span><span class="sum-label">VIP等级：</span>${u.vip}</span>
+      <span><span class="sum-label">画像：</span>${u.portrait}</span></div>
+    <div class="sum-row"><span><span class="sum-label">当前策略：</span>${u.goal} · ${u.strategyStatus}</span></div>
+    <div class="sum-row"><span><span class="sum-label">执行结论：</span>${u.conclusion}</span></div>`;
+  document.getElementById('fContent').value = '';
+  document.getElementById('fUpdateConclusion').checked = false;
+  document.getElementById('fNewConclusion').disabled = true;
+  document.getElementById('drawerMask').classList.add('open');
+  document.getElementById('followDrawer').classList.add('open');
+}
+
+function closeFollow() {
+  state.followUserId = null;
+  document.getElementById('drawerMask').classList.remove('open');
+  document.getElementById('followDrawer').classList.remove('open');
+}
+
+/* Transfer */
+function openTransfer(ids) {
+  state.transferIds = ids;
+  document.getElementById('transferCount').textContent = `已选 ${ids.length} 人`;
+  const curTeam = document.getElementById('currentTeam').value;
+  const sel = document.getElementById('tTeam');
+  [...sel.options].forEach(o => { o.disabled = o.value === curTeam; });
+  sel.value = [...sel.options].find(o => !o.disabled)?.value || '平台运营';
+  document.getElementById('transferMask').classList.add('open');
+}
+
+function closeTransfer() {
+  state.transferIds = [];
+  document.getElementById('transferMask').classList.remove('open');
+}
+
+/* Tier */
+function openTier(id) {
+  state.tierUserId = id;
+  const u = state.users.find(x => x.id === id);
+  document.getElementById('tierModalTitle').textContent = `调整分层 - ${id}`;
+  if (u) document.getElementById('tierTarget').value = u.tier;
+  document.getElementById('tierMask').classList.add('open');
+}
+
+function closeTier() {
+  state.tierUserId = null;
+  document.getElementById('tierMask').classList.remove('open');
+}
+
+/* Events */
+document.getElementById('modeSwitch').addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  state.mode = btn.dataset.mode;
+  state.selected = [];
+  renderMode();
+  renderTable();
+});
+
+['fTier','fGoal','fTeam','fPriority','fConclusion'].forEach(id => {
+  document.getElementById(id).addEventListener('change', e => {
+    const key = { fTier:'tier', fGoal:'goal', fTeam:'team', fPriority:'priority', fConclusion:'conclusion' }[id];
+    state.filters[key] = e.target.value;
+    state.page = 1;
+    renderTable();
+  });
+});
+document.getElementById('fSearch').addEventListener('input', e => {
+  state.filters.search = e.target.value.trim();
+  state.page = 1;
+  renderTable();
+});
+document.getElementById('btnReset').addEventListener('click', () => {
+  state.filters = { batch:'2024', tier:'', goal:'', team:'', priority:'', conclusion:'', search:'' };
+  document.getElementById('fTier').value = '';
+  document.getElementById('fGoal').value = '';
+  document.getElementById('fTeam').value = '';
+  document.getElementById('fPriority').value = '';
+  document.getElementById('fConclusion').value = '';
+  document.getElementById('fSearch').value = '';
+  state.page = 1;
+  renderTable();
+});
+
+document.getElementById('tableBody').addEventListener('click', e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const id = btn.dataset.id;
+  if (btn.dataset.action === 'follow') openFollow(id);
+  if (btn.dataset.action === 'transfer') openTransfer([id]);
+  if (btn.dataset.action === 'tier') openTier(id);
+});
+
+document.getElementById('tableBody').addEventListener('change', e => {
+  if (e.target.classList.contains('row-check')) {
+    const id = e.target.dataset.id;
+    if (e.target.checked) state.selected.push(id);
+    else state.selected = state.selected.filter(x => x !== id);
+    renderTable();
+  }
+});
+
+document.getElementById('tableHead').addEventListener('change', e => {
+  if (e.target.id === 'checkAll') {
+    const filtered = getFiltered();
+    const start = (state.page - 1) * state.pageSize;
+    const pageData = filtered.slice(start, start + state.pageSize);
+    if (e.target.checked) {
+      pageData.forEach(u => { if (!state.selected.includes(u.id)) state.selected.push(u.id); });
+    } else {
+      const ids = pageData.map(u => u.id);
+      state.selected = state.selected.filter(x => !ids.includes(x));
+    }
+    renderTable();
+  }
+});
+
+document.getElementById('batchBar').addEventListener('click', e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  if (btn.dataset.action === 'batch-follow') openFollow(state.selected[0]);
+  if (btn.dataset.action === 'batch-transfer') openTransfer([...state.selected]);
+  if (btn.dataset.action === 'batch-tier') openTier(state.selected[0]);
+  if (btn.dataset.action === 'batch-priority') showToast(`已批量调整 ${state.selected.length} 人优先级（原型演示）`);
+});
+
+document.getElementById('pagination').addEventListener('click', e => {
+  const btn = e.target.closest('[data-page]');
+  if (!btn || btn.disabled) return;
+  state.page = +btn.dataset.page;
+  renderTable();
+});
+
+document.getElementById('fUpdateConclusion').addEventListener('change', e => {
+  document.getElementById('fNewConclusion').disabled = !e.target.checked;
+});
+
+document.getElementById('drawerClose').addEventListener('click', closeFollow);
+document.getElementById('drawerCancel').addEventListener('click', closeFollow);
+document.getElementById('drawerMask').addEventListener('click', closeFollow);
+document.getElementById('drawerSubmit').addEventListener('click', () => {
+  const u = state.users.find(x => x.id === state.followUserId);
+  if (u) {
+    u.follow = `${today()} ${OPERATOR}`;
+    if (document.getElementById('fUpdateConclusion').checked) {
+      u.conclusion = document.getElementById('fNewConclusion').value;
+    }
+  }
+  closeFollow();
+  showToast('跟进记录已保存');
+  renderTable();
+});
+
+document.getElementById('transferClose').addEventListener('click', closeTransfer);
+document.getElementById('transferCancel').addEventListener('click', closeTransfer);
+document.getElementById('transferMask').addEventListener('click', closeTransfer);
+document.getElementById('transferConfirm').addEventListener('click', () => {
+  const team = document.getElementById('tTeam').value;
+  const n = state.transferIds.length;
+  state.transferIds.forEach(id => {
+    const u = state.users.find(x => x.id === id);
+    if (u) u.team = team;
+  });
+  closeTransfer();
+  state.selected = [];
+  showToast(`已流转 ${n} 人至 ${team}团队`);
+  renderTable();
+});
+
+document.getElementById('tierClose').addEventListener('click', closeTier);
+document.getElementById('tierCancel').addEventListener('click', closeTier);
+document.getElementById('tierMask').addEventListener('click', closeTier);
+document.getElementById('tierConfirm').addEventListener('click', () => {
+  const tier = document.getElementById('tierTarget').value;
+  const ids = state.tierUserId ? [state.tierUserId] : state.selected;
+  ids.forEach(id => {
+    const u = state.users.find(x => x.id === id);
+    if (u) u.tier = tier;
+  });
+  closeTier();
+  showToast(`已调整 ${ids.length} 人至「${tier}」`);
+  renderTable();
+});
+
+renderMode();
+renderTable();
+</script>
+</body>
+</html>

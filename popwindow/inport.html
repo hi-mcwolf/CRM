@@ -161,6 +161,15 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .col-tag {
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+      font-size: 12px;
+      color: var(--text-2);
+    }
     .col-fail { color: var(--danger); font-weight: 500; }
 
     /* Status Pills */
@@ -258,6 +267,7 @@
           <thead>
             <tr>
               <th>文件名<span class="col-en">File Name</span></th>
+              <th>星灵标签<span class="col-en">Protoss Tag Name</span></th>
               <th>导入时间<span class="col-en">Import Time</span></th>
               <th>导入状态<span class="col-en">Import Status</span></th>
               <th class="col-num">总数<span class="col-en">Total Count</span></th>
@@ -269,6 +279,7 @@
           <tbody id="historyBody">
             <tr>
               <td class="col-filename" title="user_import_20260630_morning_batch.xlsx">user_import_20260630_morning_batch.xlsx</td>
+              <td class="col-tag" title="user_tag_dnc">user_tag_dnc</td>
               <td>2026-06-30 09:15:22</td>
               <td><span class="pill pill-blue">导入中</span></td>
               <td class="col-num">500</td>
@@ -278,6 +289,7 @@
             </tr>
             <tr>
               <td class="col-filename" title="user_import_20260629_vip_users.xlsx">user_import_20260629_vip_users.xlsx</td>
+              <td class="col-tag" title="user_tag_vip">user_tag_vip</td>
               <td>2026-06-29 18:30:00</td>
               <td><span class="pill pill-green">成功</span></td>
               <td class="col-num">1,000</td>
@@ -287,6 +299,7 @@
             </tr>
             <tr>
               <td class="col-filename" title="user_import_20260628_trial_list.xlsx">user_import_20260628_trial_list.xlsx</td>
+              <td class="col-tag" title="user_tag_trial">user_tag_trial</td>
               <td>2026-06-28 14:22:18</td>
               <td><span class="pill pill-red">失败</span></td>
               <td class="col-num">200</td>
@@ -296,6 +309,7 @@
             </tr>
             <tr>
               <td class="col-filename" title="user_import_20260627_mixed_region.xlsx">user_import_20260627_mixed_region.xlsx</td>
+              <td class="col-tag" title="user_tag_campaign">user_tag_campaign</td>
               <td>2026-06-27 11:05:44</td>
               <td><span class="pill pill-orange">部分成功</span></td>
               <td class="col-num">1,000</td>
@@ -305,6 +319,7 @@
             </tr>
             <tr>
               <td class="col-filename" title="user_import_20260626_campaign_q2.xlsx">user_import_20260626_campaign_q2.xlsx</td>
+              <td class="col-tag" title="user_tag_recall">user_tag_recall</td>
               <td>2026-06-26 16:48:33</td>
               <td><span class="pill pill-green">成功</span></td>
               <td class="col-num">350</td>

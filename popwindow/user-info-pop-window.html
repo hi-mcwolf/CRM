@@ -25,11 +25,6 @@
       justify-content: center;
       padding: 24px;
       z-index: 1000;
-      transition: opacity 0.25s ease;
-    }
-    .overlay.hidden {
-      opacity: 0;
-      pointer-events: none;
     }
 
     .modal {
@@ -42,11 +37,40 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      transition: transform 0.25s ease, opacity 0.25s ease;
+      transition: box-shadow 0.25s ease;
     }
-    .overlay.hidden .modal {
-      transform: scale(0.97);
-      opacity: 0;
+    .modal.minimized {
+      width: 960px;
+      max-width: calc(100% - 48px);
+      max-height: none;
+      align-items: flex-end;
+      background: transparent;
+      box-shadow: none;
+    }
+    .modal.minimized .modal-body,
+    .modal.minimized .modal-footer {
+      display: none;
+    }
+    .modal.minimized .modal-header {
+      width: auto;
+      padding: 8px 10px;
+      border-bottom: none;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+    .modal.minimized .header-title-group {
+      display: none;
+    }
+    .modal.minimized .header-top {
+      justify-content: flex-end;
+    }
+    .overlay.minimized {
+      background: transparent;
+      pointer-events: none;
+    }
+    .overlay.minimized .modal {
+      pointer-events: auto;
     }
 
     .modal-header {
@@ -73,7 +97,7 @@
       gap: 10px;
       flex-shrink: 0;
     }
-    .btn-close {
+    .btn-minimize {
       width: 32px;
       height: 32px;
       border: none;
@@ -81,14 +105,33 @@
       border-radius: 6px;
       cursor: pointer;
       color: #6b7280;
-      font-size: 20px;
       line-height: 1;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: background 0.15s, color 0.15s;
     }
-    .btn-close:hover { background: #e5e7eb; color: #111827; }
+    .btn-minimize:hover { background: #e5e7eb; color: #111827; }
+    .btn-minimize svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+    }
+    .btn-minimize .icon-restore,
+    .btn-minimize .btn-label-restore { display: none; }
+    .modal.minimized .btn-minimize {
+      width: auto;
+      height: auto;
+      padding: 8px 14px;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #374151;
+    }
+    .modal.minimized .btn-minimize .icon-minimize { display: none; }
+    .modal.minimized .btn-minimize .icon-restore,
+    .modal.minimized .btn-minimize .btn-label-restore { display: flex; }
+    .modal.minimized .btn-minimize .btn-label-restore { display: inline; }
 
     .modal-body {
       flex: 1;
@@ -159,7 +202,7 @@
     }
     .feedback-icon.empty  { background: #f3f4f6; color: #9ca3af; }
     .feedback-icon.error  { background: #fef2f2; color: #dc2626; }
-    .feedback-icon.invalid { background: #fff7ed; color: #ea580c; }
+    #panel-empty .feedback-center { padding-top: 24px; }
     .feedback-title {
       font-size: 15px;
       font-weight: 500;
@@ -278,24 +321,6 @@
       border-color: #3b82f6;
       color: #fff;
     }
-
-    .reopen-hint {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      padding: 10px 18px;
-      background: #3b82f6;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 13px;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(59,130,246,0.35);
-      z-index: 999;
-      display: none;
-    }
-    .reopen-hint.visible { display: block; }
-    .reopen-hint:hover { background: #2563eb; }
   </style>
 </head>
 <body>
@@ -308,7 +333,21 @@
             <h1 id="modal-title">User Information</h1>
           </div>
           <div class="header-actions">
-            <button class="btn-close" id="btnClose" title="Close" aria-label="Close dialog">&times;</button>
+            <button class="btn-minimize" id="btnToggle" title="Minimize" aria-label="Minimize dialog">
+              <span class="icon-minimize" aria-hidden="true">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                  <rect x="2.5" y="2.5" width="11" height="11" rx="1.5"/>
+                  <path d="M4 12h8"/>
+                </svg>
+              </span>
+              <span class="icon-restore" aria-hidden="true">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2.5" y="5.5" width="8" height="8" rx="1.5"/>
+                  <path d="M6.5 5.5V4.5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-1"/>
+                </svg>
+              </span>
+              <span class="btn-label-restore">Restore</span>
+            </button>
           </div>
         </div>
       </div>
@@ -339,10 +378,10 @@
         </div>
 
         <div class="state-panel" id="panel-empty">
+          <div class="account-id-block" id="emptyAccountIdBlock"></div>
           <div class="feedback-center">
             <div class="feedback-icon empty">&#8709;</div>
-            <div class="feedback-title">No user information found</div>
-            <div class="feedback-desc">Please verify the user ID or contact your administrator</div>
+            <div class="feedback-title">There is no information for this user.</div>
           </div>
         </div>
 
@@ -360,14 +399,6 @@
           </div>
         </div>
 
-        <div class="state-panel" id="panel-invalid">
-          <div class="feedback-center">
-            <div class="feedback-icon invalid">?</div>
-            <div class="feedback-title">Missing user ID or invalid user ID format</div>
-            <div class="feedback-desc">Please check whether the accId parameter from the third-party system is valid</div>
-          </div>
-        </div>
-
       </div>
 
       <div class="modal-footer">
@@ -376,12 +407,9 @@
         <button class="demo-btn" data-state="success">success</button>
         <button class="demo-btn" data-state="empty">empty</button>
         <button class="demo-btn" data-state="error">error</button>
-        <button class="demo-btn" data-state="invalid">invalid</button>
       </div>
     </div>
   </div>
-
-  <button class="reopen-hint" id="btnReopen">Reopen dialog</button>
 
   <script>
     const MOCK_ACC_ID = "ACC20250625001847";
@@ -408,10 +436,11 @@
 
     let currentState = "loading";
     let autoTimer = null;
+    let isMinimized = false;
 
     const overlay    = document.getElementById("overlay");
-    const btnClose   = document.getElementById("btnClose");
-    const btnReopen  = document.getElementById("btnReopen");
+    const modal      = document.getElementById("modal");
+    const btnToggle  = document.getElementById("btnToggle");
     const btnRefresh = document.getElementById("btnRefresh");
     const retryHint  = document.getElementById("retryHint");
     const demoBtns   = document.querySelectorAll(".demo-btn");
@@ -420,8 +449,7 @@
       loading: document.getElementById("panel-loading"),
       success: document.getElementById("panel-success"),
       empty:   document.getElementById("panel-empty"),
-      error:   document.getElementById("panel-error"),
-      invalid: document.getElementById("panel-invalid")
+      error:   document.getElementById("panel-error")
     };
 
     function getAccIdFromUrl() {
@@ -443,7 +471,7 @@
       mockData.accountId = accountId;
 
       document.getElementById("accountIdBlock").innerHTML = renderFieldItems([
-        { label: "Account ID", value: accountId, primary: true }
+        { label: "Customer ID", value: accountId, primary: true }
       ]);
 
       const fields = mockData.customFields.slice(0, MAX_CUSTOM_FIELDS).map(f => ({
@@ -451,6 +479,13 @@
         value: `eg: ${f.value}`
       }));
       document.getElementById("customFields").innerHTML = renderFieldItems(fields);
+    }
+
+    function renderEmpty() {
+      const customerId = getAccIdFromUrl();
+      document.getElementById("emptyAccountIdBlock").innerHTML = renderFieldItems([
+        { label: "Customer ID", value: customerId, primary: true }
+      ]);
     }
 
     function setState(state) {
@@ -466,6 +501,8 @@
 
       if (state === "success") {
         renderSuccess();
+      } else if (state === "empty") {
+        renderEmpty();
       }
     }
 
@@ -497,19 +534,49 @@
       }, 1000);
     }
 
-    function closeModal() {
-      overlay.classList.add("hidden");
-      btnReopen.classList.add("visible");
-    }
-    function openModal() {
-      overlay.classList.remove("hidden");
-      btnReopen.classList.remove("visible");
+    function updateToggleButton() {
+      if (isMinimized) {
+        btnToggle.title = "Restore";
+        btnToggle.setAttribute("aria-label", "Restore dialog");
+      } else {
+        btnToggle.title = "Minimize";
+        btnToggle.setAttribute("aria-label", "Minimize dialog");
+      }
     }
 
-    btnClose.addEventListener("click", closeModal);
-    btnReopen.addEventListener("click", openModal);
+    function clearModalPosition() {
+      modal.style.position = "";
+      modal.style.top = "";
+      modal.style.left = "";
+      modal.style.width = "";
+      modal.style.margin = "";
+    }
+
+    function setMinimized(minimized) {
+      if (minimized) {
+        const rect = modal.getBoundingClientRect();
+        modal.style.position = "fixed";
+        modal.style.top = rect.top + "px";
+        modal.style.left = rect.left + "px";
+        modal.style.width = rect.width + "px";
+        modal.style.margin = "0";
+      } else {
+        clearModalPosition();
+      }
+
+      isMinimized = minimized;
+      modal.classList.toggle("minimized", minimized);
+      overlay.classList.toggle("minimized", minimized);
+      updateToggleButton();
+    }
+
+    function toggleMinimize() {
+      setMinimized(!isMinimized);
+    }
+
+    btnToggle.addEventListener("click", toggleMinimize);
     overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) closeModal();
+      if (e.target === overlay && !isMinimized) setMinimized(true);
     });
     btnRefresh.addEventListener("click", handleRefresh);
 
@@ -526,8 +593,8 @@
     });
 
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && !overlay.classList.contains("hidden")) {
-        closeModal();
+      if (e.key === "Escape") {
+        setMinimized(!isMinimized);
       }
     });
 

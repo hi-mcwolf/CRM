@@ -157,9 +157,7 @@
       font-size: 26px;
       margin-bottom: 16px;
     }
-    .feedback-icon.empty  { background: #f3f4f6; color: #9ca3af; }
     .feedback-icon.error  { background: #fef2f2; color: #dc2626; }
-    .feedback-icon.invalid { background: #fff7ed; color: #ea580c; }
     .feedback-title {
       font-size: 15px;
       font-weight: 500;
@@ -338,14 +336,6 @@
           <div class="field-grid" id="customFields"></div>
         </div>
 
-        <div class="state-panel" id="panel-empty">
-          <div class="feedback-center">
-            <div class="feedback-icon empty">&#8709;</div>
-            <div class="feedback-title">No user information found</div>
-            <div class="feedback-desc">Please verify the user ID or contact your administrator</div>
-          </div>
-        </div>
-
         <div class="state-panel" id="panel-error">
           <div class="feedback-center">
             <div class="feedback-icon error">!</div>
@@ -360,23 +350,13 @@
           </div>
         </div>
 
-        <div class="state-panel" id="panel-invalid">
-          <div class="feedback-center">
-            <div class="feedback-icon invalid">?</div>
-            <div class="feedback-title">Missing user ID or invalid user ID format</div>
-            <div class="feedback-desc">Please check whether the accId parameter from the third-party system is valid</div>
-          </div>
-        </div>
-
       </div>
 
       <div class="modal-footer">
         <span class="demo-label">Demo:</span>
         <button class="demo-btn" data-state="loading">loading</button>
         <button class="demo-btn" data-state="success">success</button>
-        <button class="demo-btn" data-state="empty">empty</button>
         <button class="demo-btn" data-state="error">error</button>
-        <button class="demo-btn" data-state="invalid">invalid</button>
       </div>
     </div>
   </div>
@@ -419,9 +399,7 @@
     const panels = {
       loading: document.getElementById("panel-loading"),
       success: document.getElementById("panel-success"),
-      empty:   document.getElementById("panel-empty"),
-      error:   document.getElementById("panel-error"),
-      invalid: document.getElementById("panel-invalid")
+      error:   document.getElementById("panel-error")
     };
 
     function getAccIdFromUrl() {

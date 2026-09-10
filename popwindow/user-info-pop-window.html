@@ -262,6 +262,47 @@
       border-bottom: 1px solid #e5e7eb;
     }
 
+    .info-section {
+      margin-top: 4px;
+    }
+    .info-section + .info-section,
+    .info-section + .crm-section {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 12px;
+    }
+
+    .crm-section { display: none; }
+    .crm-section.visible { display: block; }
+    .crm-panel { display: none; }
+    .crm-panel.active { display: block; }
+
+    .crm-skeleton-row {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+    .crm-skeleton-row .skeleton-block {
+      margin-bottom: 0;
+    }
+
+    .crm-timeout {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 28px 16px;
+      text-align: center;
+    }
+
     .field-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -374,7 +415,35 @@
 
         <div class="state-panel" id="panel-success">
           <div class="account-id-block" id="accountIdBlock"></div>
-          <div class="field-grid" id="customFields"></div>
+
+          <div class="info-section">
+            <div class="section-title">Uploaded Information</div>
+            <div class="field-grid" id="customFields"></div>
+          </div>
+
+          <div class="crm-section" id="crmSection">
+            <div class="section-title">CRM Information</div>
+            <div id="crmBody">
+              <div class="crm-panel" id="crm-loading">
+                <div class="crm-skeleton-row"><div class="skeleton-block" style="width:80%"></div><div class="skeleton-block" style="width:70%"></div></div>
+                <div class="crm-skeleton-row"><div class="skeleton-block" style="width:65%"></div><div class="skeleton-block" style="width:85%"></div></div>
+                <div class="crm-skeleton-row"><div class="skeleton-block" style="width:75%"></div><div class="skeleton-block" style="width:60%"></div></div>
+                <div class="crm-skeleton-row"><div class="skeleton-block" style="width:55%"></div><div class="skeleton-block" style="width:90%"></div></div>
+                <div class="crm-skeleton-row"><div class="skeleton-block" style="width:70%"></div><div class="skeleton-block" style="width:65%"></div></div>
+                <div class="crm-skeleton-row"><div class="skeleton-block" style="width:60%"></div><div class="skeleton-block" style="width:75%"></div></div>
+              </div>
+              <div class="crm-panel" id="crm-success">
+                <div class="field-grid" id="crmFields"></div>
+              </div>
+              <div class="crm-panel" id="crm-timeout">
+                <div class="crm-timeout">
+                  <button class="btn-refresh" id="btnCrmRetry" type="button">
+                    <span class="btn-label">Retry</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="state-panel" id="panel-empty">
@@ -412,8 +481,29 @@
   </div>
 
   <script>
+    /**
+     * Combined telemarketing info API (mock only in this prototype):
+     * GET /api/customer/{customerId}/telemarketing-info
+     * Response 200:
+     * {
+     *   code: 0,
+     *   data: {
+     *     customerId: string,
+     *     uploadedFields: Array<{ label: string, value: string }>,  // max 50
+     *     crmFields: Array<{ label: string, value: string }>         // no limit
+     *   }
+     * }
+     * Uploaded + CRM are returned together in one response.
+     * crmFields empty / missing / invalid → CRM section hidden
+     * Request failure / 7s timeout → user error or CRM timeout + Retry
+     *
+     * @typedef {{ label: string, value: string }} CRMField
+     */
+
     const MOCK_ACC_ID = "ACC20250625001847";
     const MAX_CUSTOM_FIELDS = 50;
+    const CRM_TIMEOUT_MS = 7000;
+    const FETCH_DELAY_MS = 1000;
 
     const mockData = {
       accountId: MOCK_ACC_ID,
@@ -431,6 +521,16 @@
         { label: "Communication Preference", value: "Prefers evening contact, price-sensitive" },
         { label: "Last Inquiry", value: "Enterprise Plan" },
         { label: "Notes", value: "Trial applied; trial expired Dec 2024" }
+      ],
+      /** @type {CRMField[]} */
+      crmFields: [
+        { label: "Account Manager", value: "Zhang San" },
+        { label: "VIP Level", value: "Gold" },
+        { label: "CRM Status", value: "Active" },
+        { label: "Industry", value: "Internet" },
+        { label: "Company Size", value: "200-500" },
+        { label: "Last CRM Touch", value: "2025-12-18" },
+        { label: "Name", value: "CRM John Smith" }
       ]
     };
 
@@ -438,11 +538,20 @@
     let autoTimer = null;
     let isMinimized = false;
 
+    /** @type {'loading'|'success'|'timeout'|'hidden'} */
+    let crmState = "loading";
+    let crmTimer = null;
+    let crmRequestId = 0;
+    /** @type {CRMField[]|null} */
+    let lastCrmFields = null;
+
     const overlay    = document.getElementById("overlay");
     const modal      = document.getElementById("modal");
     const btnToggle  = document.getElementById("btnToggle");
     const btnRefresh = document.getElementById("btnRefresh");
     const retryHint  = document.getElementById("retryHint");
+    const crmSection = document.getElementById("crmSection");
+    const btnCrmRetry = document.getElementById("btnCrmRetry");
     const demoBtns   = document.querySelectorAll(".demo-btn");
 
     const panels = {
@@ -450,6 +559,12 @@
       success: document.getElementById("panel-success"),
       empty:   document.getElementById("panel-empty"),
       error:   document.getElementById("panel-error")
+    };
+
+    const crmPanels = {
+      loading: document.getElementById("crm-loading"),
+      success: document.getElementById("crm-success"),
+      timeout: document.getElementById("crm-timeout")
     };
 
     function getAccIdFromUrl() {
@@ -466,19 +581,108 @@
       `).join("");
     }
 
-    function renderSuccess() {
-      const accountId = getAccIdFromUrl();
+    function renderCrmFields(fields) {
+      document.getElementById("crmFields").innerHTML = renderFieldItems(fields);
+    }
+
+    function clearCrmTimer() {
+      if (crmTimer) {
+        clearTimeout(crmTimer);
+        crmTimer = null;
+      }
+    }
+
+    function abortCrmQuery() {
+      clearCrmTimer();
+      crmRequestId += 1;
+    }
+
+    /**
+     * @param {'loading'|'success'|'timeout'|'hidden'} state
+     * @param {CRMField[]} [fields]
+     */
+    function setCrmState(state, fields) {
+      crmState = state;
+
+      if (state === "hidden") {
+        crmSection.classList.remove("visible");
+        Object.keys(crmPanels).forEach(key => {
+          crmPanels[key].classList.remove("active");
+        });
+        return;
+      }
+
+      crmSection.classList.add("visible");
+      Object.keys(crmPanels).forEach(key => {
+        crmPanels[key].classList.toggle("active", key === state);
+      });
+
+      if (state === "success" && fields) {
+        lastCrmFields = fields;
+        renderCrmFields(fields);
+      }
+    }
+
+    function normalizeCrmFields(fields) {
+      if (!Array.isArray(fields) || fields.length === 0) return null;
+      const valid = fields.every(
+        item => item && typeof item.label === "string" && typeof item.value === "string"
+      );
+      return valid ? fields : null;
+    }
+
+    /**
+     * Single combined mock API — uploaded + CRM in one response.
+     * @param {string} customerId
+     * @returns {Promise<{
+     *   code: number,
+     *   data: {
+     *     customerId: string,
+     *     uploadedFields: CRMField[],
+     *     crmFields: CRMField[]
+     *   } | null
+     * }>}
+     */
+    function fetchTelemarketingInfo(customerId) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            code: 0,
+            data: {
+              customerId: customerId,
+              uploadedFields: mockData.customFields.slice(0, MAX_CUSTOM_FIELDS).map(f => ({
+                label: `eg: ${f.label}`,
+                value: `eg: ${f.value}`
+              })),
+              crmFields: mockData.crmFields.slice()
+            }
+          });
+        }, FETCH_DELAY_MS);
+      });
+    }
+
+    function applyCrmFromPayload(crmFields) {
+      const fields = normalizeCrmFields(crmFields);
+      if (!fields) {
+        setCrmState("hidden");
+        return;
+      }
+      setCrmState("success", fields);
+    }
+
+    function renderSuccessFromPayload(payload) {
+      const accountId = (payload && payload.customerId) || getAccIdFromUrl();
       mockData.accountId = accountId;
 
       document.getElementById("accountIdBlock").innerHTML = renderFieldItems([
         { label: "Customer ID", value: accountId, primary: true }
       ]);
 
-      const fields = mockData.customFields.slice(0, MAX_CUSTOM_FIELDS).map(f => ({
-        label: `eg: ${f.label}`,
-        value: `eg: ${f.value}`
-      }));
-      document.getElementById("customFields").innerHTML = renderFieldItems(fields);
+      const uploaded = Array.isArray(payload && payload.uploadedFields)
+        ? payload.uploadedFields.slice(0, MAX_CUSTOM_FIELDS)
+        : [];
+      document.getElementById("customFields").innerHTML = renderFieldItems(uploaded);
+      applyCrmFromPayload(payload && payload.crmFields);
     }
 
     function renderEmpty() {
@@ -488,7 +692,7 @@
       ]);
     }
 
-    function setState(state) {
+    function showUserPanel(state) {
       currentState = state;
 
       Object.keys(panels).forEach(key => {
@@ -498,12 +702,128 @@
       demoBtns.forEach(btn => {
         btn.classList.toggle("active", btn.dataset.state === state);
       });
+    }
+
+    function setState(state) {
+      abortCrmQuery();
+
+      if (state === "loading") {
+        showUserPanel("loading");
+        setCrmState("hidden");
+        return;
+      }
+
+      if (state === "empty") {
+        showUserPanel("empty");
+        renderEmpty();
+        setCrmState("hidden");
+        return;
+      }
+
+      if (state === "error") {
+        showUserPanel("error");
+        setCrmState("hidden");
+        return;
+      }
 
       if (state === "success") {
-        renderSuccess();
-      } else if (state === "empty") {
-        renderEmpty();
+        showUserPanel("loading");
+        setCrmState("hidden");
+        loadTelemarketingInfo();
       }
+    }
+
+    function loadTelemarketingInfo() {
+      const requestId = ++crmRequestId;
+      clearCrmTimer();
+      showUserPanel("loading");
+
+      let settled = false;
+
+      crmTimer = setTimeout(() => {
+        if (requestId !== crmRequestId || settled) return;
+        settled = true;
+        showUserPanel("error");
+        setCrmState("hidden");
+      }, CRM_TIMEOUT_MS);
+
+      fetchTelemarketingInfo(getAccIdFromUrl())
+        .then(res => {
+          if (requestId !== crmRequestId || settled) return;
+          settled = true;
+          clearCrmTimer();
+
+          if (!res || res.code !== 0 || !res.data) {
+            showUserPanel("empty");
+            renderEmpty();
+            setCrmState("hidden");
+            return;
+          }
+
+          const uploaded = res.data.uploadedFields;
+          if (!Array.isArray(uploaded) || uploaded.length === 0) {
+            showUserPanel("empty");
+            renderEmpty();
+            setCrmState("hidden");
+            return;
+          }
+
+          showUserPanel("success");
+          renderSuccessFromPayload(res.data);
+        })
+        .catch(() => {
+          if (requestId !== crmRequestId || settled) return;
+          settled = true;
+          clearCrmTimer();
+          showUserPanel("error");
+          setCrmState("hidden");
+        });
+    }
+
+    /** CRM Retry reuses the same combined API. */
+    function handleCrmRetry() {
+      const requestId = ++crmRequestId;
+      clearCrmTimer();
+      setCrmState("loading");
+
+      let settled = false;
+
+      crmTimer = setTimeout(() => {
+        if (requestId !== crmRequestId || settled) return;
+        settled = true;
+        setCrmState("timeout");
+      }, CRM_TIMEOUT_MS);
+
+      fetchTelemarketingInfo(getAccIdFromUrl())
+        .then(res => {
+          if (requestId !== crmRequestId || settled) return;
+          settled = true;
+          clearCrmTimer();
+
+          if (!res || res.code !== 0 || !res.data) {
+            setCrmState("timeout");
+            return;
+          }
+
+          if (Array.isArray(res.data.uploadedFields) && res.data.uploadedFields.length > 0) {
+            document.getElementById("customFields").innerHTML = renderFieldItems(
+              res.data.uploadedFields.slice(0, MAX_CUSTOM_FIELDS)
+            );
+          }
+
+          const fields = normalizeCrmFields(res.data.crmFields);
+          if (!fields) {
+            setCrmState("hidden");
+            return;
+          }
+          setCrmState("success", fields);
+        })
+        .catch(() => {
+          if (requestId !== crmRequestId || settled) return;
+          settled = true;
+          clearCrmTimer();
+          setCrmState("timeout");
+        });
     }
 
     function clearAutoTimer() {
@@ -512,10 +832,7 @@
 
     function simulateAutoQuery() {
       clearAutoTimer();
-      setState("loading");
-      autoTimer = setTimeout(() => {
-        setState("success");
-      }, 1000);
+      setState("success");
     }
 
     function handleRefresh() {
@@ -523,15 +840,51 @@
       btnRefresh.disabled = true;
       retryHint.classList.add("visible");
 
-      setState("loading");
+      const requestId = ++crmRequestId;
+      clearCrmTimer();
+      showUserPanel("loading");
+      setCrmState("hidden");
 
-      clearAutoTimer();
-      autoTimer = setTimeout(() => {
+      let settled = false;
+
+      crmTimer = setTimeout(() => {
+        if (requestId !== crmRequestId || settled) return;
+        settled = true;
         btnRefresh.classList.remove("loading");
         btnRefresh.disabled = false;
         retryHint.classList.remove("visible");
-        setState("success");
-      }, 1000);
+        showUserPanel("error");
+      }, CRM_TIMEOUT_MS);
+
+      fetchTelemarketingInfo(getAccIdFromUrl())
+        .then(res => {
+          if (requestId !== crmRequestId || settled) return;
+          settled = true;
+          clearCrmTimer();
+          btnRefresh.classList.remove("loading");
+          btnRefresh.disabled = false;
+          retryHint.classList.remove("visible");
+
+          if (!res || res.code !== 0 || !res.data || !Array.isArray(res.data.uploadedFields) || res.data.uploadedFields.length === 0) {
+            showUserPanel("empty");
+            renderEmpty();
+            setCrmState("hidden");
+            return;
+          }
+
+          showUserPanel("success");
+          renderSuccessFromPayload(res.data);
+        })
+        .catch(() => {
+          if (requestId !== crmRequestId || settled) return;
+          settled = true;
+          clearCrmTimer();
+          btnRefresh.classList.remove("loading");
+          btnRefresh.disabled = false;
+          retryHint.classList.remove("visible");
+          showUserPanel("error");
+          setCrmState("hidden");
+        });
     }
 
     function updateToggleButton() {
@@ -579,15 +932,25 @@
       if (e.target === overlay && !isMinimized) setMinimized(true);
     });
     btnRefresh.addEventListener("click", handleRefresh);
+    btnCrmRetry.addEventListener("click", handleCrmRetry);
 
     demoBtns.forEach(btn => {
       btn.addEventListener("click", () => {
         clearAutoTimer();
+        abortCrmQuery();
         const state = btn.dataset.state;
         if (state === "loading") {
-          setState("loading");
-        } else {
-          setState(state);
+          showUserPanel("loading");
+          setCrmState("hidden");
+        } else if (state === "success") {
+          setState("success");
+        } else if (state === "empty") {
+          showUserPanel("empty");
+          renderEmpty();
+          setCrmState("hidden");
+        } else if (state === "error") {
+          showUserPanel("error");
+          setCrmState("hidden");
         }
       });
     });

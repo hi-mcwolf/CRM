@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>User Information</title>
+  <title>User Info Pop Window</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -26,6 +26,13 @@
       padding: 24px;
       z-index: 1000;
     }
+    .overlay.minimized {
+      background: transparent;
+      pointer-events: none;
+    }
+    .overlay.minimized .modal {
+      pointer-events: auto;
+    }
 
     .modal {
       width: 960px;
@@ -37,7 +44,6 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      transition: box-shadow 0.25s ease;
     }
     .modal.minimized {
       width: 960px;
@@ -47,8 +53,9 @@
       background: transparent;
       box-shadow: none;
     }
-    .modal.minimized .modal-body,
-    .modal.minimized .modal-footer {
+    .modal.minimized .modal-tabs,
+    .modal.minimized .customer-id-bar,
+    .modal.minimized .modal-body {
       display: none;
     }
     .modal.minimized .modal-header {
@@ -65,28 +72,21 @@
     .modal.minimized .header-top {
       justify-content: flex-end;
     }
-    .overlay.minimized {
-      background: transparent;
-      pointer-events: none;
-    }
-    .overlay.minimized .modal {
-      pointer-events: auto;
-    }
 
     .modal-header {
-      padding: 16px 20px 14px;
+      padding: 12px 16px;
       border-bottom: 1px solid #e5e7eb;
       background: #f8fafc;
       flex-shrink: 0;
     }
     .header-top {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
       gap: 12px;
     }
     .header-title-group h1 {
-      font-size: 17px;
+      font-size: 16px;
       font-weight: 600;
       color: #111827;
       line-height: 1.3;
@@ -94,9 +94,9 @@
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 10px;
       flex-shrink: 0;
     }
+
     .btn-minimize {
       width: 32px;
       height: 32px;
@@ -129,238 +129,387 @@
       color: #374151;
     }
     .modal.minimized .btn-minimize .icon-minimize { display: none; }
-    .modal.minimized .btn-minimize .icon-restore,
-    .modal.minimized .btn-minimize .btn-label-restore { display: flex; }
+    .modal.minimized .btn-minimize .icon-restore { display: block; }
     .modal.minimized .btn-minimize .btn-label-restore { display: inline; }
+
+    .customer-id-bar {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #e5e7eb;
+      background: #fff;
+      flex-shrink: 0;
+    }
+    .customer-id-label {
+      font-size: 13px;
+      color: #6b7280;
+    }
+    .customer-id-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1e40af;
+      word-break: break-all;
+    }
+
+    .modal-tabs {
+      display: flex;
+      border-bottom: 1px solid #e5e7eb;
+      background: #fff;
+      flex-shrink: 0;
+      padding: 0 8px;
+    }
+    .tab-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 12px 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #6b7280;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      white-space: nowrap;
+    }
+    .tab-btn:hover { color: #111827; }
+    .tab-btn.active {
+      color: #2563eb;
+      border-bottom-color: #2563eb;
+    }
 
     .modal-body {
       flex: 1;
       overflow-y: auto;
-      padding: 16px 20px;
+      padding: 0;
+      background: #fff;
     }
 
-    .state-panel { display: none; }
-    .state-panel.active { display: block; }
+    .tab-pane { display: none; padding: 12px 16px 20px; }
+    .tab-pane.active { display: block; }
 
-    .loading-center {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 60px 20px;
-      color: #6b7280;
+    .block {
+      padding: 14px 0;
     }
-    .spinner {
-      width: 36px;
-      height: 36px;
-      border: 3px solid #e5e7eb;
-      border-top-color: #3b82f6;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin-bottom: 16px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-text { font-size: 14px; color: #4b5563; }
-
-    .skeleton-block {
-      background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s infinite;
-      border-radius: 4px;
-      height: 14px;
-      margin-bottom: 10px;
-    }
-    .skeleton-card {
-      background: #f9fafb;
-      border: 1px solid #e5e7eb;
-      border-radius: 6px;
-      padding: 16px;
-      margin-bottom: 12px;
-    }
-    @keyframes shimmer {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
-
-    .feedback-center {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 56px 20px;
-      text-align: center;
-    }
-    .feedback-icon {
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 26px;
-      margin-bottom: 16px;
-    }
-    .feedback-icon.empty  { background: #f3f4f6; color: #9ca3af; }
-    .feedback-icon.error  { background: #fef2f2; color: #dc2626; }
-    #panel-empty .feedback-center { padding-top: 24px; }
-    .feedback-title {
-      font-size: 15px;
-      font-weight: 500;
-      color: #374151;
-      margin-bottom: 6px;
-    }
-    .feedback-desc {
-      font-size: 13px;
-      color: #9ca3af;
-      margin-bottom: 20px;
-    }
-
-    .btn-refresh {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 20px;
-      background: #3b82f6;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .btn-refresh:hover { background: #2563eb; }
-    .btn-refresh:disabled {
-      background: #93c5fd;
-      cursor: not-allowed;
-    }
-    .btn-refresh .btn-spinner {
-      width: 14px;
-      height: 14px;
-      border: 2px solid rgba(255,255,255,0.4);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      display: none;
-    }
-    .btn-refresh.loading .btn-spinner { display: block; }
-    .btn-refresh.loading .btn-label { display: none; }
-    .btn-refresh.loading .btn-loading-label { display: inline; }
-    .btn-refresh .btn-loading-label { display: none; }
-
-    .retry-hint {
-      font-size: 12px;
-      color: #6b7280;
-      margin-top: 10px;
-      display: none;
-    }
-    .retry-hint.visible { display: block; }
-
-    .account-id-block {
-      padding: 4px 0 16px;
-      margin-bottom: 16px;
-      border-bottom: 1px solid #e5e7eb;
-    }
-
-    .info-section {
-      margin-top: 4px;
-    }
-    .info-section + .info-section,
-    .info-section + .crm-section {
-      margin-top: 20px;
-      padding-top: 16px;
+    .block + .block {
       border-top: 1px solid #e5e7eb;
     }
-    .section-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: #374151;
-      margin-bottom: 12px;
-    }
-
-    .crm-section { display: none; }
-    .crm-section.visible { display: block; }
-    .crm-panel { display: none; }
-    .crm-panel.active { display: block; }
-
-    .crm-skeleton-row {
-      display: grid;
-      grid-template-columns: 120px 1fr;
-      gap: 12px;
-      margin-bottom: 12px;
-      align-items: center;
-    }
-    .crm-skeleton-row .skeleton-block {
-      margin-bottom: 0;
-    }
-
-    .crm-timeout {
+    .block-title {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 28px 16px;
-      text-align: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 12px;
+    }
+    .block-title::before {
+      content: "";
+      width: 3px;
+      height: 14px;
+      background: #2563eb;
+      border-radius: 2px;
+      flex-shrink: 0;
     }
 
-    .field-grid {
+    .field-list {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 12px 20px;
     }
-    @media (max-width: 720px) {
-      .field-grid { grid-template-columns: repeat(2, 1fr); }
+    .field-row {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
     }
-    @media (max-width: 480px) {
-      .field-grid { grid-template-columns: 1fr; }
-    }
-
     .field-label {
-      font-size: 12px;
-      color: #9ca3af;
-      margin-bottom: 2px;
+      font-size: 13px;
+      color: #6b7280;
+      line-height: 1.4;
     }
     .field-value {
       font-size: 14px;
       color: #111827;
-      word-break: break-all;
+      line-height: 1.4;
+      word-break: break-word;
+      white-space: pre-wrap;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
     }
-    .field-item.primary .field-value {
-      font-size: 16px;
-      font-weight: 600;
-      color: #1e40af;
+    .field-value.accent-red { color: #dc2626; font-weight: 500; }
+    .field-value.muted { color: #9ca3af; }
+
+    @media (max-width: 720px) {
+      .field-list { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 420px) {
+      .field-list { grid-template-columns: 1fr; }
     }
 
-    .modal-footer {
-      padding: 10px 20px;
-      border-top: 1px solid #e5e7eb;
-      background: #f8fafc;
-      flex-shrink: 0;
+    .block-state {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      flex-wrap: wrap;
+      justify-content: center;
+      padding: 28px 12px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 13px;
+      gap: 10px;
+    }
+    .block-state .spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid #e5e7eb;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .btn-retry {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 16px;
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .btn-retry:hover { background: #2563eb; }
+
+    .tab-fields {
+      padding: 4px 0;
+    }
+
+    .benefits-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .benefits-toolbar {
+      display: flex;
+      flex-direction: column;
       gap: 8px;
     }
-    .demo-label {
-      font-size: 12px;
-      color: #9ca3af;
-      margin-right: 4px;
+    .benefits-filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
     }
-    .demo-btn {
-      padding: 4px 12px;
+    .benefits-filter-row.type-row {
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .filter-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .filter-chip {
       border: 1px solid #d1d5db;
-      border-radius: 4px;
       background: #fff;
-      font-size: 12px;
       color: #374151;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 12px;
       cursor: pointer;
-      transition: all 0.15s;
+      line-height: 1.4;
     }
-    .demo-btn:hover { border-color: #3b82f6; color: #2563eb; }
-    .demo-btn.active {
-      background: #3b82f6;
+    .filter-chip:hover {
       border-color: #3b82f6;
-      color: #fff;
+      color: #2563eb;
+    }
+    .filter-chip.active {
+      background: #eff6ff;
+      border-color: #3b82f6;
+      color: #2563eb;
+      font-weight: 500;
+    }
+    .benefits-total {
+      font-size: 12px;
+      color: #6b7280;
+      white-space: nowrap;
+      margin-left: auto;
+    }
+    .benefits-table-wrap {
+      overflow-x: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+    }
+    .benefits-table {
+      width: 100%;
+      min-width: 980px;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .benefits-table th {
+      background: #f8fafc;
+      color: #6b7280;
+      font-weight: 500;
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid #e5e7eb;
+      white-space: nowrap;
+    }
+    .benefits-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #f3f4f6;
+      color: #111827;
+      vertical-align: top;
+    }
+    .benefits-table tr:last-child td {
+      border-bottom: none;
+    }
+    .benefit-id {
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+    }
+    .activity-name {
+      font-size: 12px;
+      color: #111827;
+      line-height: 1.35;
+    }
+    .activity-id {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 2px;
+      word-break: break-all;
+    }
+    .status-text {
+      display: inline-block;
+      font-weight: 500;
+      white-space: nowrap;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .status-text.pending-claim {
+      color: #c2410c;
+      background: #ffedd5;
+    }
+    .status-text.pending-use {
+      color: #1d4ed8;
+      background: #dbeafe;
+    }
+    .status-text.used {
+      color: #15803d;
+      background: #dcfce7;
+    }
+    .status-text.voided {
+      color: #6b7280;
+      background: #f3f4f6;
+    }
+    .dual-line {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      white-space: nowrap;
+    }
+    .dual-line-item {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .dual-tag {
+      display: inline-block;
+      min-width: 28px;
+      font-size: 11px;
+      color: #9ca3af;
+    }
+    .usage-value {
+      font-variant-numeric: tabular-nums;
+      color: #ea580c;
+    }
+    .turnover-value {
+      color: #ea580c;
+      font-variant-numeric: tabular-nums;
+    }
+    .turnover-none {
+      color: #9ca3af;
+    }
+
+    .follow-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .follow-subtabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .follow-subtab {
+      border: none;
+      background: transparent;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #6b7280;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+    .follow-subtab:hover { color: #111827; }
+    .follow-subtab.active {
+      color: #2563eb;
+      border-bottom-color: #2563eb;
+    }
+    .follow-table-wrap {
+      overflow-x: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+    }
+    .follow-table {
+      width: 100%;
+      min-width: 640px;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .follow-table th {
+      background: #f8fafc;
+      color: #6b7280;
+      font-weight: 500;
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid #e5e7eb;
+      white-space: nowrap;
+    }
+    .follow-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #f3f4f6;
+      color: #111827;
+      vertical-align: top;
+    }
+    .follow-table tr:last-child td {
+      border-bottom: none;
+    }
+    .follow-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #f3f4f6;
+      color: #4b5563;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .follow-note,
+    .follow-sms {
+      max-width: 360px;
+      word-break: break-word;
+      white-space: pre-wrap;
     }
   </style>
 </head>
@@ -393,498 +542,816 @@
         </div>
       </div>
 
-      <div class="modal-body" id="modalBody">
-
-        <div class="state-panel active" id="panel-loading">
-          <div class="loading-center">
-            <div class="spinner"></div>
-            <div class="loading-text">Fetching user information</div>
-          </div>
-          <div style="padding: 0 4px;">
-            <div class="skeleton-card">
-              <div class="skeleton-block" style="width:30%"></div>
-              <div class="skeleton-block" style="width:60%"></div>
-              <div class="skeleton-block" style="width:45%"></div>
-            </div>
-            <div class="skeleton-card">
-              <div class="skeleton-block" style="width:40%"></div>
-              <div class="skeleton-block" style="width:55%"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="state-panel" id="panel-success">
-          <div class="account-id-block" id="accountIdBlock"></div>
-
-          <div class="info-section">
-            <div class="section-title">Uploaded Information</div>
-            <div class="field-grid" id="customFields"></div>
-          </div>
-
-          <div class="crm-section" id="crmSection">
-            <div class="section-title">CRM Information</div>
-            <div id="crmBody">
-              <div class="crm-panel" id="crm-loading">
-                <div class="crm-skeleton-row"><div class="skeleton-block" style="width:80%"></div><div class="skeleton-block" style="width:70%"></div></div>
-                <div class="crm-skeleton-row"><div class="skeleton-block" style="width:65%"></div><div class="skeleton-block" style="width:85%"></div></div>
-                <div class="crm-skeleton-row"><div class="skeleton-block" style="width:75%"></div><div class="skeleton-block" style="width:60%"></div></div>
-                <div class="crm-skeleton-row"><div class="skeleton-block" style="width:55%"></div><div class="skeleton-block" style="width:90%"></div></div>
-                <div class="crm-skeleton-row"><div class="skeleton-block" style="width:70%"></div><div class="skeleton-block" style="width:65%"></div></div>
-                <div class="crm-skeleton-row"><div class="skeleton-block" style="width:60%"></div><div class="skeleton-block" style="width:75%"></div></div>
-              </div>
-              <div class="crm-panel" id="crm-success">
-                <div class="field-grid" id="crmFields"></div>
-              </div>
-              <div class="crm-panel" id="crm-timeout">
-                <div class="crm-timeout">
-                  <button class="btn-refresh" id="btnCrmRetry" type="button">
-                    <span class="btn-label">Retry</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="state-panel" id="panel-empty">
-          <div class="account-id-block" id="emptyAccountIdBlock"></div>
-          <div class="feedback-center">
-            <div class="feedback-icon empty">&#8709;</div>
-            <div class="feedback-title">There is no information for this user.</div>
-          </div>
-        </div>
-
-        <div class="state-panel" id="panel-error">
-          <div class="feedback-center">
-            <div class="feedback-icon error">!</div>
-            <div class="feedback-title">Failed to fetch user information. Please try again later</div>
-            <div class="feedback-desc">The query service is temporarily unavailable. Try refreshing to retry</div>
-            <button class="btn-refresh" id="btnRefresh">
-              <span class="btn-spinner"></span>
-              <span class="btn-label">Refresh</span>
-              <span class="btn-loading-label">Retrying...</span>
-            </button>
-            <div class="retry-hint" id="retryHint">Retrying user information query, please wait...</div>
-          </div>
-        </div>
-
+      <div class="customer-id-bar" id="customerIdBar">
+        <span class="customer-id-label">Customer ID</span>
+        <span class="customer-id-value" id="customerIdValue"></span>
       </div>
 
-      <div class="modal-footer">
-        <span class="demo-label">Demo:</span>
-        <button class="demo-btn" data-state="loading">loading</button>
-        <button class="demo-btn" data-state="success">success</button>
-        <button class="demo-btn" data-state="empty">empty</button>
-        <button class="demo-btn" data-state="error">error</button>
+      <nav class="modal-tabs" id="tabBar" aria-label="Information tabs">
+        <button type="button" class="tab-btn active" data-tab="user-info">User Info</button>
+        <button type="button" class="tab-btn" data-tab="promotion">Benefits Information</button>
+        <button type="button" class="tab-btn" data-tab="follow-up">Follow-up History</button>
+      </nav>
+
+      <div class="modal-body" id="modalBody">
+        <section class="tab-pane active" id="pane-user-info" data-tab="user-info"></section>
+        <section class="tab-pane" id="pane-promotion" data-tab="promotion"></section>
+        <section class="tab-pane" id="pane-follow-up" data-tab="follow-up"></section>
       </div>
     </div>
   </div>
 
   <script>
-    /**
-     * Combined telemarketing info API (mock only in this prototype):
-     * GET /api/customer/{customerId}/telemarketing-info
-     * Response 200:
-     * {
-     *   code: 0,
-     *   data: {
-     *     customerId: string,
-     *     uploadedFields: Array<{ label: string, value: string }>,  // max 50
-     *     crmFields: Array<{ label: string, value: string }>         // no limit
-     *   }
-     * }
-     * Uploaded + CRM are returned together in one response.
-     * crmFields empty / missing / invalid → CRM section hidden
-     * Request failure / 7s timeout → user error or CRM timeout + Retry
-     *
-     * @typedef {{ label: string, value: string }} CRMField
-     */
-
-    const MOCK_ACC_ID = "ACC20250625001847";
-    const MAX_CUSTOM_FIELDS = 50;
-    const CRM_TIMEOUT_MS = 7000;
-    const FETCH_DELAY_MS = 1000;
+    const LOAD_DELAY_MS = 500;
 
     const mockData = {
-      accountId: MOCK_ACC_ID,
-      customFields: [
-        { label: "Name", value: "John Smith" },
-        { label: "Phone", value: "138****6721" },
-        { label: "Email", value: "john.smith@example.com" },
-        { label: "Region", value: "Chaoyang District, Beijing" },
-        { label: "Membership Tier", value: "Standard Member" },
-        { label: "Registration Date", value: "2023-08-15" },
-        { label: "Channel Source", value: "Online Promotion" },
-        { label: "Account Status", value: "Active" },
-        { label: "Last Active", value: "Active in last 30 days" },
-        { label: "Risk Flag", value: "No risk marker" },
-        { label: "Communication Preference", value: "Prefers evening contact, price-sensitive" },
-        { label: "Last Inquiry", value: "Enterprise Plan" },
-        { label: "Notes", value: "Trial applied; trial expired Dec 2024" }
-      ],
-      /** @type {CRMField[]} */
-      crmFields: [
-        { label: "Account Manager", value: "Zhang San" },
-        { label: "VIP Level", value: "Gold" },
-        { label: "CRM Status", value: "Active" },
-        { label: "Industry", value: "Internet" },
-        { label: "Company Size", value: "200-500" },
-        { label: "Last CRM Touch", value: "2025-12-18" },
-        { label: "Name", value: "CRM John Smith" }
-      ]
+      customerId: "10001",
+      tabs: {
+        userInfo: {
+          blocks: [
+            {
+              id: "user-info",
+              title: "User Info",
+              fields: [
+                { label: "Login Name", value: "marvin@" },
+                { label: "Account Id", value: "10001" },
+                { label: "First Name", value: "Marvin" },
+                { label: "Gender", value: "M" },
+                { label: "Nationality", value: "SG" },
+                { label: "City", value: "Singapore" },
+                { label: "Account Status", value: "active" },
+                { label: "Account Balance", value: "1234.56" },
+                { label: "Kyc Status", value: "verified" },
+                { label: "Group Vip Level", value: "bronze" },
+                { label: "Vip Level", value: "gold" },
+                { label: "Register Time", value: "2026-01-15" },
+                { label: "Silent Days", value: "7", accent: "red" },
+                { label: "Birthday", value: "1990-05-20" },
+                { label: "Login Device", value: "—", muted: true },
+                { label: "Phone Model", value: "—", muted: true }
+              ]
+            },
+            {
+              id: "game-behavior",
+              title: "Game Behavior",
+              fields: [
+                { label: "Favorite Game Type", value: "SLOT" },
+                { label: "Top 3 Games", value: "Jili-Super Ace, Pragmatic-Gates of Olympus, PG-Fortune Tiger" },
+                { label: "Game Highlight", value: "Slot-Jili-Super Ace-05/26/2026" },
+                { label: "Share Game Highlight", value: "Yes" },
+                { label: "Win Loss Before Silent", value: "+234.56" },
+                { label: "Historical Win Loss", value: "+12,345.67" },
+                { label: "Best Win Day", value: "2026-03-15 / +5,678.90" },
+                { label: "Most Active Bet Time", value: "20:00-00:00" }
+              ]
+            },
+            {
+              id: "promotion-behavior",
+              title: "Promotion Behavior",
+              fields: [
+                { label: "Today Issued Promotion", value: "Cashback 50" },
+                { label: "Today Claimed Promotion", value: "Cashback 50" },
+                { label: "Today Used Promotion", value: "Cashback 50" },
+                { label: "Promotion Preference", value: "cashback" },
+                { label: "Like Offline Event", value: "Yes" },
+                { label: "Is Freeloader", value: "No" }
+              ]
+            },
+            {
+              id: "deposit-betting",
+              title: "Deposit & Betting Behavior",
+              fields: [
+                { label: "Today Bet", value: "234.56" },
+                { label: "Today Deposit", value: "500.00" },
+                { label: "Last Bet Time", value: "2026-09-22 18:30:00" },
+                { label: "Last Deposit Info", value: "2026-09-22 12:15:00 / 500.00" },
+                { label: "Max Single Deposit", value: "10,000.00" },
+                { label: "Max Single Bet", value: "5,000.00" },
+                { label: "Top 3 Payment Methods", value: "Bank Transfer, USDT, Visa" }
+              ]
+            },
+            {
+              id: "lifestyle",
+              title: "Lifestyle",
+              fields: [
+                { label: "Main Gaming Motivation", value: "Entertainment" },
+                { label: "Favorite Brand", value: "Apple" },
+                { label: "Favorite Restaurant", value: "Din Tai Fung" },
+                { label: "Favorite Hotel", value: "Marina Bay Sands" },
+                { label: "Favorite Color", value: "Blue" },
+                { label: "Favorite Number", value: "8" },
+                { label: "Food Allergy", value: "None" },
+                { label: "Favorite Airline", value: "Singapore Airlines" },
+                { label: "Travel Experience", value: "Tokyo, Bangkok, Bali" },
+                { label: "Travel Goal", value: "Iceland" },
+                { label: "Sports Interest", value: "Football" },
+                { label: "Golf Interest", value: "Beginner" },
+                { label: "Is Smoker", value: "No" },
+                { label: "Is Drinker", value: "No" },
+                { label: "Preferred Contact Method", value: "Phone" },
+                { label: "Preferred Contact Time", value: "14:00-18:00" },
+                { label: "Preferred Language", value: "English" },
+                { label: "Preferred Media Channel", value: "Facebook" }
+              ]
+            },
+            {
+              id: "supplementary",
+              title: "Supplementary Information",
+              fields: [
+                { label: "Customer Id", value: "10001" },
+                { label: "Field 1", value: "Osaka" },
+                { label: "Field 2", value: "18" },
+                { label: "Field 3", value: "Premium" },
+                { label: "Field 4", value: "Web" },
+                { label: "Field 5", value: "—" }
+              ]
+            }
+          ]
+        },
+        benefits: {
+          items: [
+            {
+              id: "6aace48be4b07fc7c5132f80",
+              type: "Turnover",
+              activityName: "Pinoy Drop Ball Series Rebate",
+              activityId: "68d0e4a1b2c3d4e5f6789012",
+              status: "Pending use",
+              issuedAt: "2026-09-22 17:19:52",
+              claimedAt: "2026-09-22 17:20:09",
+              claimDeadline: "-",
+              useDeadline: "2026-09-29 17:20:09",
+              faceUsed: 0,
+              faceInitial: 37,
+              turnoverDone: 0,
+              turnoverRequired: 37
+            },
+            {
+              id: "7bbdf59cf5c18gd8d6243g91",
+              type: "Rebate",
+              activityName: "Poly Chests Official",
+              activityId: "68d0e4a1b2c3d4e5f6789013",
+              status: "Pending use",
+              issuedAt: "2026-09-22 16:22:41",
+              claimedAt: "2026-09-22 16:22:41",
+              claimDeadline: "-",
+              useDeadline: "2026-09-29 16:22:41",
+              faceUsed: 0,
+              faceInitial: 2000,
+              turnoverDone: 0,
+              turnoverRequired: 150
+            },
+            {
+              id: "8ccef6adf6d29he9e7354h02",
+              type: "Bet",
+              activityName: "Weekend Deposit Bonus",
+              activityId: "68d0e4a1b2c3d4e5f6789014",
+              status: "Used",
+              issuedAt: "2026-09-20 10:05:11",
+              claimedAt: "2026-09-20 10:08:22",
+              claimDeadline: "-",
+              useDeadline: "2026-09-27 10:08:22",
+              faceUsed: 500,
+              faceInitial: 500,
+              turnoverDone: 500,
+              turnoverRequired: 500
+            },
+            {
+              id: "9ddfg7beg7e30if0f8465i13",
+              type: "Rebate",
+              activityName: "SLOT SuperAceHula DailyRebate",
+              activityId: "68d0e4a1b2c3d4e5f6789015",
+              status: "Pending claim",
+              issuedAt: "2026-09-23 09:00:00",
+              claimedAt: "-",
+              claimDeadline: "2026-09-30 09:00:00",
+              useDeadline: "2026-10-07 09:00:00",
+              faceUsed: 0,
+              faceInitial: 120,
+              turnoverDone: 0,
+              turnoverRequired: null
+            },
+            {
+              id: "0eefh8cfh8f41jg1g9576j24",
+              type: "Turnover",
+              activityName: "Pinoy Drop Ball Series Rebate",
+              activityId: "68d0e4a1b2c3d4e5f6789016",
+              status: "Unclaimed expired",
+              issuedAt: "2026-09-10 12:00:00",
+              claimedAt: "-",
+              claimDeadline: "2026-09-17 12:00:00",
+              useDeadline: "2026-09-17 12:00:00",
+              faceUsed: 0,
+              faceInitial: 80,
+              turnoverDone: 0,
+              turnoverRequired: 80
+            },
+            {
+              id: "1ffgi9dgi9g52kh2h0687k35",
+              type: "Bet",
+              activityName: "Poly Weekly Tasks Round 2",
+              activityId: "68d0e4a1b2c3d4e5f6789017",
+              status: "Claimed unused expired",
+              issuedAt: "2026-09-01 08:30:00",
+              claimedAt: "2026-09-01 09:10:00",
+              claimDeadline: "-",
+              useDeadline: "2026-09-15 09:10:00",
+              faceUsed: 0,
+              faceInitial: 300,
+              turnoverDone: 0,
+              turnoverRequired: null
+            },
+            {
+              id: "2gghj0ehj0h63li3i1798l46",
+              type: "Turnover",
+              activityName: "Poly Chests Official",
+              activityId: "68d0e4a1b2c3d4e5f6789018",
+              status: "Used",
+              issuedAt: "2026-09-18 14:20:33",
+              claimedAt: "2026-09-18 14:21:01",
+              claimDeadline: "-",
+              useDeadline: "2026-09-25 14:21:01",
+              faceUsed: 37,
+              faceInitial: 37,
+              turnoverDone: 37,
+              turnoverRequired: 37
+            },
+            {
+              id: "3hhik1fik1i74mj4j2809m57",
+              type: "Rebate",
+              activityName: "VIP Weekly Rebate",
+              activityId: "68d0e4a1b2c3d4e5f6789019",
+              status: "Pending use",
+              issuedAt: "2026-09-21 11:11:11",
+              claimedAt: "2026-09-21 11:15:00",
+              claimDeadline: "-",
+              useDeadline: "2026-09-28 11:15:00",
+              faceUsed: 0,
+              faceInitial: 88,
+              turnoverDone: 0,
+              turnoverRequired: 88
+            }
+          ]
+        },
+        followUp: {
+          tags: [
+            "ACCOUNT SUSPENDED",
+            "Abusive Language",
+            "Hang Up Call",
+            "KEEP RINGING",
+            "Do Not Call",
+            "Plays Other Platform",
+            "Deposit Interest",
+            "Needs CS Support",
+            "Unhappy / Complaint",
+            "Invalid / Wrong Number",
+            "Rejected / Hung Up",
+            "Unreachable",
+            "No Answer",
+            "Call Back Needed",
+            "Busy Now",
+            "Not Interested",
+            "Interested"
+          ],
+          phoneList: [
+            {
+              time: "2026-09-20 15:30:12",
+              tag: "Interested",
+              agentNote: "Customer asked about deposit bonus and VIP upgrade.",
+              agentName: "alice@"
+            },
+            {
+              time: "2026-09-18 11:05:44",
+              tag: "Call Back Needed",
+              agentNote: "Busy at work, requested callback after 18:00.",
+              agentName: "bob@"
+            },
+            {
+              time: "2026-09-15 16:22:01",
+              tag: "Do Not Call",
+              agentNote: "Customer asked not to be contacted again.",
+              agentName: "alice@"
+            },
+            {
+              time: "2026-09-12 10:18:33",
+              tag: "No Answer",
+              agentNote: "Rang 3 times, no answer.",
+              agentName: "carol@"
+            },
+            {
+              time: "2026-09-10 14:41:27",
+              tag: "Hang Up Call",
+              agentNote: "Customer hung up after greeting.",
+              agentName: "bob@"
+            },
+            {
+              time: "2026-09-08 09:12:50",
+              tag: "Deposit Interest",
+              agentNote: "Showed interest in weekend deposit promo.",
+              agentName: "alice@"
+            },
+            {
+              time: "2026-09-05 19:03:18",
+              tag: "Busy Now",
+              agentNote: "Said currently busy, try tomorrow morning.",
+              agentName: "dave@"
+            },
+            {
+              time: "2026-09-01 13:46:48",
+              tag: "Unreachable",
+              agentNote: "Line unreachable / out of service.",
+              agentName: "carol@"
+            }
+          ],
+          smsList: [
+            {
+              time: "2026-09-18 10:00:00",
+              tag: "Deposit Interest",
+              smsContent: "Your exclusive cashback is ready to claim. Reply YES for details."
+            },
+            {
+              time: "2026-09-15 12:30:00",
+              tag: "Interested",
+              smsContent: "VIP weekly rebate is now available. Open the app to view."
+            },
+            {
+              time: "2026-09-12 09:15:00",
+              tag: "Call Back Needed",
+              smsContent: "We tried to reach you earlier. Please reply a preferred callback time."
+            },
+            {
+              time: "2026-09-08 18:45:00",
+              tag: "Needs CS Support",
+              smsContent: "Our support team can help with your account. Reply HELP to connect."
+            },
+            {
+              time: "2026-09-03 08:00:00",
+              tag: "Not Interested",
+              smsContent: "Thanks for your time. You can opt out anytime by replying STOP."
+            },
+            {
+              time: "2026-08-28 20:10:00",
+              tag: "Unhappy / Complaint",
+              smsContent: "Sorry for the inconvenience. A specialist will follow up within 24 hours."
+            }
+          ]
+        }
+      }
     };
 
-    let currentState = "loading";
-    let autoTimer = null;
+    /** @type {Record<string, 'loading'|'success'|'empty'|'failed'>} */
+    const blockStates = {};
+    /** @type {Record<string, 'loading'|'success'|'empty'|'failed'>} */
+    const tabStates = {
+      promotion: "loading",
+      "follow-up": "loading"
+    };
+
     let isMinimized = false;
+    let activeTab = "user-info";
+    let benefitsStatusFilter = "All";
+    let benefitsTypeFilter = "All types";
+    let followUpSubTab = "phone";
 
-    /** @type {'loading'|'success'|'timeout'|'hidden'} */
-    let crmState = "loading";
-    let crmTimer = null;
-    let crmRequestId = 0;
-    /** @type {CRMField[]|null} */
-    let lastCrmFields = null;
+    const BENEFIT_STATUSES = [
+      "All",
+      "Pending claim",
+      "Unclaimed expired",
+      "Pending use",
+      "Claimed unused expired",
+      "Used"
+    ];
+    const BENEFIT_TYPES = [
+      "All types",
+      "Bet",
+      "Rebate",
+      "Turnover"
+    ];
 
-    const overlay    = document.getElementById("overlay");
-    const modal      = document.getElementById("modal");
-    const btnToggle  = document.getElementById("btnToggle");
-    const btnRefresh = document.getElementById("btnRefresh");
-    const retryHint  = document.getElementById("retryHint");
-    const crmSection = document.getElementById("crmSection");
-    const btnCrmRetry = document.getElementById("btnCrmRetry");
-    const demoBtns   = document.querySelectorAll(".demo-btn");
+    const overlay = document.getElementById("overlay");
+    const modal = document.getElementById("modal");
+    const btnToggle = document.getElementById("btnToggle");
+    const tabBar = document.getElementById("tabBar");
+    const paneUserInfo = document.getElementById("pane-user-info");
+    const panePromotion = document.getElementById("pane-promotion");
+    const paneFollowUp = document.getElementById("pane-follow-up");
+    const customerIdValue = document.getElementById("customerIdValue");
 
-    const panels = {
-      loading: document.getElementById("panel-loading"),
-      success: document.getElementById("panel-success"),
-      empty:   document.getElementById("panel-empty"),
-      error:   document.getElementById("panel-error")
-    };
-
-    const crmPanels = {
-      loading: document.getElementById("crm-loading"),
-      success: document.getElementById("crm-success"),
-      timeout: document.getElementById("crm-timeout")
-    };
-
-    function getAccIdFromUrl() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get("accId") || MOCK_ACC_ID;
+    function renderCustomerId() {
+      const id = mockData.customerId || "—";
+      customerIdValue.textContent = id;
+      customerIdValue.setAttribute("title", id);
     }
 
-    function renderFieldItems(fields) {
-      return fields.map(f => `
-        <div class="field-item${f.primary ? " primary" : ""}">
-          <div class="field-label">${f.label}</div>
-          <div class="field-value">${f.value}</div>
+    function hasValue(value) {
+      return value !== null && value !== undefined && value !== "";
+    }
+
+    function visibleFields(fields) {
+      return (fields || []).filter(f => hasValue(f.value));
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderFieldList(fields) {
+      const list = visibleFields(fields);
+      if (!list.length) return "";
+
+      return `
+        <div class="field-list">
+          ${list.map(f => {
+            const classes = ["field-value"];
+            if (f.accent === "red") classes.push("accent-red");
+            if (f.muted) classes.push("muted");
+            const title = escapeHtml(f.value).replace(/\n/g, " ");
+            return `
+              <div class="field-row">
+                <div class="field-label">${escapeHtml(f.label)}</div>
+                <div class="${classes.join(" ")}" title="${title}">${escapeHtml(f.value)}</div>
+              </div>
+            `;
+          }).join("")}
         </div>
+      `;
+    }
+
+    function renderStateBody(state, retryAttr) {
+      if (state === "loading") {
+        return `
+          <div class="block-state">
+            <div class="spinner"></div>
+            <div>Loading...</div>
+          </div>
+        `;
+      }
+      if (state === "empty") {
+        return `<div class="block-state">No information available.</div>`;
+      }
+      if (state === "failed") {
+        return `
+          <div class="block-state">
+            <div>Failed to load. Please retry.</div>
+            <button type="button" class="btn-retry" ${retryAttr}>Retry</button>
+          </div>
+        `;
+      }
+      return "";
+    }
+
+    function renderBlock(block) {
+      const fields = visibleFields(block.fields);
+      if (!fields.length && blockStates[block.id] === "success") {
+        return "";
+      }
+
+      const state = blockStates[block.id] || "loading";
+      let body = "";
+
+      if (state === "success") {
+        body = renderFieldList(block.fields);
+        if (!body) return "";
+      } else {
+        body = renderStateBody(state, `data-retry-block="${escapeHtml(block.id)}"`);
+      }
+
+      return `
+        <div class="block" data-block-id="${escapeHtml(block.id)}">
+          <h3 class="block-title">${escapeHtml(block.title)}</h3>
+          ${body}
+        </div>
+      `;
+    }
+
+    function renderUserInfoTab() {
+      const blocks = mockData.tabs.userInfo.blocks
+        .map(renderBlock)
+        .filter(Boolean)
+        .join("");
+      paneUserInfo.innerHTML = blocks || `<div class="block-state">No information available.</div>`;
+    }
+
+    function statusClass(status) {
+      if (status === "Pending claim") return "pending-claim";
+      if (status === "Pending use") return "pending-use";
+      if (status === "Used") return "used";
+      return "voided";
+    }
+
+    function formatNumber(n) {
+      return Number(n).toLocaleString("en-US");
+    }
+
+    function getFilteredBenefits() {
+      return (mockData.tabs.benefits.items || []).filter(item => {
+        const statusOk = benefitsStatusFilter === "All" || item.status === benefitsStatusFilter;
+        const typeOk = benefitsTypeFilter === "All types" || item.type === benefitsTypeFilter;
+        return statusOk && typeOk;
+      });
+    }
+
+    function renderFilterChips(options, activeValue, dataAttr) {
+      return options.map(opt => `
+        <button
+          type="button"
+          class="filter-chip${opt === activeValue ? " active" : ""}"
+          ${dataAttr}="${escapeHtml(opt)}"
+        >${escapeHtml(opt)}</button>
       `).join("");
     }
 
-    function renderCrmFields(fields) {
-      document.getElementById("crmFields").innerHTML = renderFieldItems(fields);
+    function renderDualTimes(firstLabel, firstValue, secondLabel, secondValue) {
+      return `
+        <div class="dual-line">
+          <div class="dual-line-item">
+            <span class="dual-tag">${escapeHtml(firstLabel)}</span>
+            <span>${escapeHtml(firstValue || "-")}</span>
+          </div>
+          <div class="dual-line-item">
+            <span class="dual-tag">${escapeHtml(secondLabel)}</span>
+            <span>${escapeHtml(secondValue || "-")}</span>
+          </div>
+        </div>
+      `;
     }
 
-    function clearCrmTimer() {
-      if (crmTimer) {
-        clearTimeout(crmTimer);
-        crmTimer = null;
+    function renderBenefitsRows(items) {
+      if (!items.length) {
+        return `<tr><td colspan="8"><div class="block-state">No information available.</div></td></tr>`;
       }
+
+      return items.map(item => {
+        const turnoverHtml = item.turnoverRequired === null || item.turnoverRequired === undefined
+          ? `<div class="turnover-none">No turnover required</div>`
+          : `<div class="turnover-value">${formatNumber(item.turnoverDone)} / ${formatNumber(item.turnoverRequired)}</div>`;
+
+        return `
+          <tr>
+            <td>
+              <div class="benefit-id" title="${escapeHtml(item.id)}">${escapeHtml(item.id)}</div>
+            </td>
+            <td>${escapeHtml(item.type)}</td>
+            <td>
+              <div class="activity-name">${escapeHtml(item.activityName)}</div>
+              <div class="activity-id">${escapeHtml(item.activityId)}</div>
+            </td>
+            <td>
+              <span class="status-text ${statusClass(item.status)}">${escapeHtml(item.status)}</span>
+            </td>
+            <td>
+              ${renderDualTimes("Iss", item.issuedAt, "Clm", item.claimedAt)}
+            </td>
+            <td>
+              ${renderDualTimes("Clm", item.claimDeadline, "Use", item.useDeadline)}
+            </td>
+            <td>
+              <div class="usage-value">${formatNumber(item.faceUsed)} / ${formatNumber(item.faceInitial)}</div>
+            </td>
+            <td>${turnoverHtml}</td>
+          </tr>
+        `;
+      }).join("");
     }
 
-    function abortCrmQuery() {
-      clearCrmTimer();
-      crmRequestId += 1;
+    function renderBenefitsSuccess() {
+      const items = getFilteredBenefits();
+      return `
+        <div class="benefits-panel">
+          <div class="benefits-toolbar">
+            <div class="benefits-filter-row">
+              <div class="filter-chips">
+                ${renderFilterChips(BENEFIT_STATUSES, benefitsStatusFilter, "data-benefit-status")}
+              </div>
+            </div>
+            <div class="benefits-filter-row type-row">
+              <div class="filter-chips">
+                ${renderFilterChips(BENEFIT_TYPES, benefitsTypeFilter, "data-benefit-type")}
+              </div>
+              <div class="benefits-total">${items.length.toLocaleString("en-US")} rows</div>
+            </div>
+          </div>
+          <div class="benefits-table-wrap">
+            <table class="benefits-table">
+              <thead>
+                <tr>
+                  <th>Benefit</th>
+                  <th>Type</th>
+                  <th>Activity</th>
+                  <th>Status</th>
+                  <th>Issued / Claimed</th>
+                  <th>Claim due / Use due</th>
+                  <th>Amount used / initial</th>
+                  <th>Turnover done / required</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${renderBenefitsRows(items)}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
     }
 
-    /**
-     * @param {'loading'|'success'|'timeout'|'hidden'} state
-     * @param {CRMField[]} [fields]
-     */
-    function setCrmState(state, fields) {
-      crmState = state;
-
-      if (state === "hidden") {
-        crmSection.classList.remove("visible");
-        Object.keys(crmPanels).forEach(key => {
-          crmPanels[key].classList.remove("active");
-        });
+    function renderSimpleTab(pane, tabKey, stateKey, fields) {
+      const state = tabStates[stateKey] || "loading";
+      if (state !== "success") {
+        pane.innerHTML = renderStateBody(state, `data-retry-tab="${escapeHtml(stateKey)}"`);
         return;
       }
+      const html = renderFieldList(fields);
+      pane.innerHTML = html
+        ? `<div class="tab-fields">${html}</div>`
+        : `<div class="block-state">No information available.</div>`;
+    }
 
-      crmSection.classList.add("visible");
-      Object.keys(crmPanels).forEach(key => {
-        crmPanels[key].classList.toggle("active", key === state);
+    function renderPromotionTab() {
+      const state = tabStates.promotion || "loading";
+      if (state !== "success") {
+        panePromotion.innerHTML = renderStateBody(state, `data-retry-tab="promotion"`);
+        return;
+      }
+      if (!(mockData.tabs.benefits.items || []).length) {
+        panePromotion.innerHTML = `<div class="block-state">No information available.</div>`;
+        return;
+      }
+      panePromotion.innerHTML = renderBenefitsSuccess();
+    }
+
+    function renderFollowUpPhoneTable(rows) {
+      if (!rows.length) {
+        return `<div class="block-state">No information available.</div>`;
+      }
+      return `
+        <div class="follow-table-wrap">
+          <table class="follow-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Tag</th>
+                <th>Agent Note</th>
+                <th>Agent Name</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(row => `
+                <tr>
+                  <td>${escapeHtml(row.time)}</td>
+                  <td><span class="follow-tag">${escapeHtml(row.tag)}</span></td>
+                  <td>
+                    <div class="follow-note" title="${escapeHtml(row.agentNote)}">${escapeHtml(row.agentNote)}</div>
+                  </td>
+                  <td>${escapeHtml(row.agentName)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderFollowUpSmsTable(rows) {
+      if (!rows.length) {
+        return `<div class="block-state">No information available.</div>`;
+      }
+      return `
+        <div class="follow-table-wrap">
+          <table class="follow-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Tag</th>
+                <th>SMS Content</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(row => `
+                <tr>
+                  <td>${escapeHtml(row.time)}</td>
+                  <td><span class="follow-tag">${escapeHtml(row.tag)}</span></td>
+                  <td>
+                    <div class="follow-sms" title="${escapeHtml(row.smsContent)}">${escapeHtml(row.smsContent)}</div>
+                  </td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderFollowUpSuccess() {
+      const phoneActive = followUpSubTab === "phone";
+      const tableHtml = phoneActive
+        ? renderFollowUpPhoneTable(mockData.tabs.followUp.phoneList || [])
+        : renderFollowUpSmsTable(mockData.tabs.followUp.smsList || []);
+
+      return `
+        <div class="follow-panel">
+          <div class="follow-subtabs">
+            <button type="button" class="follow-subtab${phoneActive ? " active" : ""}" data-follow-sub="phone">
+              Phone Follow-up List
+            </button>
+            <button type="button" class="follow-subtab${!phoneActive ? " active" : ""}" data-follow-sub="sms">
+              SMS Send List
+            </button>
+          </div>
+          ${tableHtml}
+        </div>
+      `;
+    }
+
+    function renderFollowUpTab() {
+      const state = tabStates["follow-up"] || "loading";
+      if (state !== "success") {
+        paneFollowUp.innerHTML = renderStateBody(state, `data-retry-tab="follow-up"`);
+        return;
+      }
+      const hasPhone = (mockData.tabs.followUp.phoneList || []).length > 0;
+      const hasSms = (mockData.tabs.followUp.smsList || []).length > 0;
+      if (!hasPhone && !hasSms) {
+        paneFollowUp.innerHTML = `<div class="block-state">No information available.</div>`;
+        return;
+      }
+      paneFollowUp.innerHTML = renderFollowUpSuccess();
+    }
+
+    function renderAll() {
+      renderUserInfoTab();
+      renderPromotionTab();
+      renderFollowUpTab();
+    }
+
+    function switchTab(tabName) {
+      activeTab = tabName;
+      document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tab === tabName);
       });
-
-      if (state === "success" && fields) {
-        lastCrmFields = fields;
-        renderCrmFields(fields);
-      }
-    }
-
-    function normalizeCrmFields(fields) {
-      if (!Array.isArray(fields) || fields.length === 0) return null;
-      const valid = fields.every(
-        item => item && typeof item.label === "string" && typeof item.value === "string"
-      );
-      return valid ? fields : null;
-    }
-
-    /**
-     * Single combined mock API — uploaded + CRM in one response.
-     * @param {string} customerId
-     * @returns {Promise<{
-     *   code: number,
-     *   data: {
-     *     customerId: string,
-     *     uploadedFields: CRMField[],
-     *     crmFields: CRMField[]
-     *   } | null
-     * }>}
-     */
-    function fetchTelemarketingInfo(customerId) {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          resolve({
-            code: 0,
-            data: {
-              customerId: customerId,
-              uploadedFields: mockData.customFields.slice(0, MAX_CUSTOM_FIELDS).map(f => ({
-                label: `eg: ${f.label}`,
-                value: `eg: ${f.value}`
-              })),
-              crmFields: mockData.crmFields.slice()
-            }
-          });
-        }, FETCH_DELAY_MS);
+      document.querySelectorAll(".tab-pane").forEach(pane => {
+        pane.classList.toggle("active", pane.dataset.tab === tabName);
       });
     }
 
-    function applyCrmFromPayload(crmFields) {
-      const fields = normalizeCrmFields(crmFields);
-      if (!fields) {
-        setCrmState("hidden");
-        return;
-      }
-      setCrmState("success", fields);
+    function setBlockState(blockId, state) {
+      blockStates[blockId] = state;
+      renderUserInfoTab();
     }
 
-    function renderSuccessFromPayload(payload) {
-      const accountId = (payload && payload.customerId) || getAccIdFromUrl();
-      mockData.accountId = accountId;
-
-      document.getElementById("accountIdBlock").innerHTML = renderFieldItems([
-        { label: "Customer ID", value: accountId, primary: true }
-      ]);
-
-      const uploaded = Array.isArray(payload && payload.uploadedFields)
-        ? payload.uploadedFields.slice(0, MAX_CUSTOM_FIELDS)
-        : [];
-      document.getElementById("customFields").innerHTML = renderFieldItems(uploaded);
-      applyCrmFromPayload(payload && payload.crmFields);
+    function setTabState(tabKey, state) {
+      tabStates[tabKey] = state;
+      if (tabKey === "promotion") renderPromotionTab();
+      if (tabKey === "follow-up") renderFollowUpTab();
     }
 
-    function renderEmpty() {
-      const customerId = getAccIdFromUrl();
-      document.getElementById("emptyAccountIdBlock").innerHTML = renderFieldItems([
-        { label: "Customer ID", value: customerId, primary: true }
-      ]);
+    function loadBlock(blockId) {
+      setBlockState(blockId, "loading");
+      setTimeout(() => {
+        const block = mockData.tabs.userInfo.blocks.find(b => b.id === blockId);
+        if (!block || !visibleFields(block.fields).length) {
+          setBlockState(blockId, "empty");
+          return;
+        }
+        setBlockState(blockId, "success");
+      }, LOAD_DELAY_MS);
     }
 
-    function showUserPanel(state) {
-      currentState = state;
+    function loadSimpleTab(tabKey) {
+      setTabState(tabKey, "loading");
+      setTimeout(() => {
+        if (tabKey === "promotion") {
+          if (!(mockData.tabs.benefits.items || []).length) {
+            setTabState(tabKey, "empty");
+            return;
+          }
+          setTabState(tabKey, "success");
+          return;
+        }
+        const hasPhone = (mockData.tabs.followUp.phoneList || []).length > 0;
+        const hasSms = (mockData.tabs.followUp.smsList || []).length > 0;
+        if (!hasPhone && !hasSms) {
+          setTabState(tabKey, "empty");
+          return;
+        }
+        setTabState(tabKey, "success");
+      }, LOAD_DELAY_MS);
+    }
 
-      Object.keys(panels).forEach(key => {
-        panels[key].classList.toggle("active", key === state);
+    function initLoad() {
+      renderCustomerId();
+      mockData.tabs.userInfo.blocks.forEach(block => {
+        blockStates[block.id] = "loading";
       });
+      tabStates.promotion = "loading";
+      tabStates["follow-up"] = "loading";
+      renderAll();
 
-      demoBtns.forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.state === state);
-      });
-    }
-
-    function setState(state) {
-      abortCrmQuery();
-
-      if (state === "loading") {
-        showUserPanel("loading");
-        setCrmState("hidden");
-        return;
-      }
-
-      if (state === "empty") {
-        showUserPanel("empty");
-        renderEmpty();
-        setCrmState("hidden");
-        return;
-      }
-
-      if (state === "error") {
-        showUserPanel("error");
-        setCrmState("hidden");
-        return;
-      }
-
-      if (state === "success") {
-        showUserPanel("loading");
-        setCrmState("hidden");
-        loadTelemarketingInfo();
-      }
-    }
-
-    function loadTelemarketingInfo() {
-      const requestId = ++crmRequestId;
-      clearCrmTimer();
-      showUserPanel("loading");
-
-      let settled = false;
-
-      crmTimer = setTimeout(() => {
-        if (requestId !== crmRequestId || settled) return;
-        settled = true;
-        showUserPanel("error");
-        setCrmState("hidden");
-      }, CRM_TIMEOUT_MS);
-
-      fetchTelemarketingInfo(getAccIdFromUrl())
-        .then(res => {
-          if (requestId !== crmRequestId || settled) return;
-          settled = true;
-          clearCrmTimer();
-
-          if (!res || res.code !== 0 || !res.data) {
-            showUserPanel("empty");
-            renderEmpty();
-            setCrmState("hidden");
-            return;
-          }
-
-          const uploaded = res.data.uploadedFields;
-          if (!Array.isArray(uploaded) || uploaded.length === 0) {
-            showUserPanel("empty");
-            renderEmpty();
-            setCrmState("hidden");
-            return;
-          }
-
-          showUserPanel("success");
-          renderSuccessFromPayload(res.data);
-        })
-        .catch(() => {
-          if (requestId !== crmRequestId || settled) return;
-          settled = true;
-          clearCrmTimer();
-          showUserPanel("error");
-          setCrmState("hidden");
-        });
-    }
-
-    /** CRM Retry reuses the same combined API. */
-    function handleCrmRetry() {
-      const requestId = ++crmRequestId;
-      clearCrmTimer();
-      setCrmState("loading");
-
-      let settled = false;
-
-      crmTimer = setTimeout(() => {
-        if (requestId !== crmRequestId || settled) return;
-        settled = true;
-        setCrmState("timeout");
-      }, CRM_TIMEOUT_MS);
-
-      fetchTelemarketingInfo(getAccIdFromUrl())
-        .then(res => {
-          if (requestId !== crmRequestId || settled) return;
-          settled = true;
-          clearCrmTimer();
-
-          if (!res || res.code !== 0 || !res.data) {
-            setCrmState("timeout");
-            return;
-          }
-
-          if (Array.isArray(res.data.uploadedFields) && res.data.uploadedFields.length > 0) {
-            document.getElementById("customFields").innerHTML = renderFieldItems(
-              res.data.uploadedFields.slice(0, MAX_CUSTOM_FIELDS)
-            );
-          }
-
-          const fields = normalizeCrmFields(res.data.crmFields);
-          if (!fields) {
-            setCrmState("hidden");
-            return;
-          }
-          setCrmState("success", fields);
-        })
-        .catch(() => {
-          if (requestId !== crmRequestId || settled) return;
-          settled = true;
-          clearCrmTimer();
-          setCrmState("timeout");
-        });
-    }
-
-    function clearAutoTimer() {
-      if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
-    }
-
-    function simulateAutoQuery() {
-      clearAutoTimer();
-      setState("success");
-    }
-
-    function handleRefresh() {
-      btnRefresh.classList.add("loading");
-      btnRefresh.disabled = true;
-      retryHint.classList.add("visible");
-
-      const requestId = ++crmRequestId;
-      clearCrmTimer();
-      showUserPanel("loading");
-      setCrmState("hidden");
-
-      let settled = false;
-
-      crmTimer = setTimeout(() => {
-        if (requestId !== crmRequestId || settled) return;
-        settled = true;
-        btnRefresh.classList.remove("loading");
-        btnRefresh.disabled = false;
-        retryHint.classList.remove("visible");
-        showUserPanel("error");
-      }, CRM_TIMEOUT_MS);
-
-      fetchTelemarketingInfo(getAccIdFromUrl())
-        .then(res => {
-          if (requestId !== crmRequestId || settled) return;
-          settled = true;
-          clearCrmTimer();
-          btnRefresh.classList.remove("loading");
-          btnRefresh.disabled = false;
-          retryHint.classList.remove("visible");
-
-          if (!res || res.code !== 0 || !res.data || !Array.isArray(res.data.uploadedFields) || res.data.uploadedFields.length === 0) {
-            showUserPanel("empty");
-            renderEmpty();
-            setCrmState("hidden");
-            return;
-          }
-
-          showUserPanel("success");
-          renderSuccessFromPayload(res.data);
-        })
-        .catch(() => {
-          if (requestId !== crmRequestId || settled) return;
-          settled = true;
-          clearCrmTimer();
-          btnRefresh.classList.remove("loading");
-          btnRefresh.disabled = false;
-          retryHint.classList.remove("visible");
-          showUserPanel("error");
-          setCrmState("hidden");
-        });
+      mockData.tabs.userInfo.blocks.forEach(block => loadBlock(block.id));
+      loadSimpleTab("promotion");
+      loadSimpleTab("follow-up");
     }
 
     function updateToggleButton() {
@@ -928,40 +1395,52 @@
     }
 
     btnToggle.addEventListener("click", toggleMinimize);
+
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay && !isMinimized) setMinimized(true);
     });
-    btnRefresh.addEventListener("click", handleRefresh);
-    btnCrmRetry.addEventListener("click", handleCrmRetry);
 
-    demoBtns.forEach(btn => {
-      btn.addEventListener("click", () => {
-        clearAutoTimer();
-        abortCrmQuery();
-        const state = btn.dataset.state;
-        if (state === "loading") {
-          showUserPanel("loading");
-          setCrmState("hidden");
-        } else if (state === "success") {
-          setState("success");
-        } else if (state === "empty") {
-          showUserPanel("empty");
-          renderEmpty();
-          setCrmState("hidden");
-        } else if (state === "error") {
-          showUserPanel("error");
-          setCrmState("hidden");
-        }
-      });
+    tabBar.addEventListener("click", (e) => {
+      const btn = e.target.closest(".tab-btn");
+      if (!btn) return;
+      switchTab(btn.dataset.tab);
     });
 
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        setMinimized(!isMinimized);
+    document.getElementById("modalBody").addEventListener("click", (e) => {
+      const statusChip = e.target.closest("[data-benefit-status]");
+      if (statusChip) {
+        benefitsStatusFilter = statusChip.getAttribute("data-benefit-status");
+        renderPromotionTab();
+        return;
+      }
+      const typeChip = e.target.closest("[data-benefit-type]");
+      if (typeChip) {
+        benefitsTypeFilter = typeChip.getAttribute("data-benefit-type");
+        renderPromotionTab();
+        return;
+      }
+      const followSub = e.target.closest("[data-follow-sub]");
+      if (followSub) {
+        followUpSubTab = followSub.getAttribute("data-follow-sub");
+        renderFollowUpTab();
+        return;
+      }
+      const retryBlock = e.target.closest("[data-retry-block]");
+      if (retryBlock) {
+        loadBlock(retryBlock.getAttribute("data-retry-block"));
+        return;
+      }
+      const retryTab = e.target.closest("[data-retry-tab]");
+      if (retryTab) {
+        loadSimpleTab(retryTab.getAttribute("data-retry-tab"));
       }
     });
 
-    simulateAutoQuery();
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") setMinimized(!isMinimized);
+    });
+
+    initLoad();
   </script>
 </body>
 </html>

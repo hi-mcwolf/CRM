@@ -340,47 +340,80 @@
       white-space: nowrap;
       margin-left: auto;
     }
-    .benefits-table-wrap {
-      overflow-x: auto;
+    .benefit-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+    }
+    .benefit-card {
       border: 1px solid #e5e7eb;
       border-radius: 6px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
     }
-    .benefits-table {
-      width: 100%;
-      min-width: 980px;
-      border-collapse: collapse;
+    .benefit-card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      min-width: 0;
+    }
+    .benefit-card-title {
+      min-width: 0;
+      flex: 1;
+    }
+    .benefit-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 6px 10px;
+      min-width: 0;
+    }
+    .benefit-type {
       font-size: 12px;
-    }
-    .benefits-table th {
-      background: #f8fafc;
-      color: #6b7280;
       font-weight: 500;
-      text-align: left;
-      padding: 10px 12px;
-      border-bottom: 1px solid #e5e7eb;
-      white-space: nowrap;
-    }
-    .benefits-table td {
-      padding: 10px 12px;
-      border-bottom: 1px solid #f3f4f6;
-      color: #111827;
-      vertical-align: top;
-    }
-    .benefits-table tr:last-child td {
-      border-bottom: none;
+      color: #374151;
     }
     .benefit-id {
-      max-width: 120px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 11px;
+      color: #6b7280;
+      word-break: break-all;
+      min-width: 0;
     }
-    .activity-name {
+    .benefit-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 12px;
+      min-width: 0;
+    }
+    .benefit-field {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .benefit-field-label {
+      font-size: 11px;
+      color: #9ca3af;
+      line-height: 1.3;
+    }
+    .benefit-field-value {
       font-size: 12px;
       color: #111827;
       line-height: 1.35;
+      word-break: break-word;
+    }
+    .activity-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #111827;
+      line-height: 1.35;
+      word-break: break-word;
     }
     .activity-id {
       font-size: 11px;
@@ -390,6 +423,7 @@
     }
     .status-text {
       display: inline-block;
+      flex-shrink: 0;
       font-weight: 500;
       white-space: nowrap;
       padding: 2px 8px;
@@ -411,23 +445,6 @@
     .status-text.voided {
       color: #6b7280;
       background: #f3f4f6;
-    }
-    .dual-line {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      white-space: nowrap;
-    }
-    .dual-line-item {
-      display: flex;
-      align-items: baseline;
-      gap: 6px;
-    }
-    .dual-tag {
-      display: inline-block;
-      min-width: 28px;
-      font-size: 11px;
-      color: #9ca3af;
     }
     .usage-value {
       font-variant-numeric: tabular-nums;
@@ -1064,57 +1081,50 @@
       `).join("");
     }
 
-    function renderDualTimes(firstLabel, firstValue, secondLabel, secondValue) {
+    function renderBenefitField(label, valueHtml) {
       return `
-        <div class="dual-line">
-          <div class="dual-line-item">
-            <span class="dual-tag">${escapeHtml(firstLabel)}</span>
-            <span>${escapeHtml(firstValue || "-")}</span>
-          </div>
-          <div class="dual-line-item">
-            <span class="dual-tag">${escapeHtml(secondLabel)}</span>
-            <span>${escapeHtml(secondValue || "-")}</span>
-          </div>
+        <div class="benefit-field">
+          <div class="benefit-field-label">${escapeHtml(label)}</div>
+          <div class="benefit-field-value">${valueHtml}</div>
         </div>
       `;
     }
 
     function renderBenefitsRows(items) {
       if (!items.length) {
-        return `<tr><td colspan="8"><div class="block-state">No information available.</div></td></tr>`;
+        return `<div class="block-state">No information available.</div>`;
       }
 
-      return items.map(item => {
+      return `<div class="benefit-list">${items.map(item => {
         const turnoverHtml = item.turnoverRequired === null || item.turnoverRequired === undefined
-          ? `<div class="turnover-none">No turnover required</div>`
-          : `<div class="turnover-value">${formatNumber(item.turnoverDone)} / ${formatNumber(item.turnoverRequired)}</div>`;
+          ? `<span class="turnover-none">No turnover required</span>`
+          : `<span class="turnover-value">${formatNumber(item.turnoverDone)} / ${formatNumber(item.turnoverRequired)}</span>`;
+        const amountHtml = `<span class="usage-value">${formatNumber(item.faceUsed)} / ${formatNumber(item.faceInitial)}</span>`;
 
         return `
-          <tr>
-            <td>
-              <div class="benefit-id" title="${escapeHtml(item.id)}">${escapeHtml(item.id)}</div>
-            </td>
-            <td>${escapeHtml(item.type)}</td>
-            <td>
-              <div class="activity-name">${escapeHtml(item.activityName)}</div>
-              <div class="activity-id">${escapeHtml(item.activityId)}</div>
-            </td>
-            <td>
+          <article class="benefit-card">
+            <div class="benefit-card-head">
+              <div class="benefit-card-title">
+                <div class="activity-name">${escapeHtml(item.activityName)}</div>
+                <div class="activity-id">${escapeHtml(item.activityId)}</div>
+              </div>
               <span class="status-text ${statusClass(item.status)}">${escapeHtml(item.status)}</span>
-            </td>
-            <td>
-              ${renderDualTimes("Iss", item.issuedAt, "Clm", item.claimedAt)}
-            </td>
-            <td>
-              ${renderDualTimes("Clm", item.claimDeadline, "Use", item.useDeadline)}
-            </td>
-            <td>
-              <div class="usage-value">${formatNumber(item.faceUsed)} / ${formatNumber(item.faceInitial)}</div>
-            </td>
-            <td>${turnoverHtml}</td>
-          </tr>
+            </div>
+            <div class="benefit-meta">
+              <span class="benefit-type">${escapeHtml(item.type)}</span>
+              <span class="benefit-id" title="${escapeHtml(item.id)}">${escapeHtml(item.id)}</span>
+            </div>
+            <div class="benefit-grid">
+              ${renderBenefitField("Amount used / initial", amountHtml)}
+              ${renderBenefitField("Turnover done / required", turnoverHtml)}
+              ${renderBenefitField("Issued", escapeHtml(item.issuedAt || "-"))}
+              ${renderBenefitField("Claimed", escapeHtml(item.claimedAt || "-"))}
+              ${renderBenefitField("Claim due", escapeHtml(item.claimDeadline || "-"))}
+              ${renderBenefitField("Use due", escapeHtml(item.useDeadline || "-"))}
+            </div>
+          </article>
         `;
-      }).join("");
+      }).join("")}</div>`;
     }
 
     function renderBenefitsSuccess() {
@@ -1134,25 +1144,7 @@
               <div class="benefits-total">${items.length.toLocaleString("en-US")} rows</div>
             </div>
           </div>
-          <div class="benefits-table-wrap">
-            <table class="benefits-table">
-              <thead>
-                <tr>
-                  <th>Benefit</th>
-                  <th>Type</th>
-                  <th>Activity</th>
-                  <th>Status</th>
-                  <th>Issued / Claimed</th>
-                  <th>Claim due / Use due</th>
-                  <th>Amount used / initial</th>
-                  <th>Turnover done / required</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${renderBenefitsRows(items)}
-              </tbody>
-            </table>
-          </div>
+          ${renderBenefitsRows(items)}
         </div>
       `;
     }
